@@ -597,6 +597,7 @@ button{font-family:var(--body);cursor:pointer;}
       <button class="nav-tab" onclick="showTab('marketing',this)">📊 Marketing</button>
       <button class="nav-tab" onclick="showTab('agentperf',this)">👤 Agent Wise Performance</button>
       <button class="nav-tab" onclick="showTab('convcompare',this)">⚖️ Digital vs BTL Conversion</button>
+      <button class="nav-tab" onclick="showTab('newdigital',this)">🆕 New Digital (Since 20 Aug'26)</button>
     </div>
     <div class="nav-right">
       <div class="file-pill"><div class="live-dot"></div><span id="navFilename">—</span></div>
@@ -1921,6 +1922,63 @@ button{font-family:var(--body);cursor:pointer;}
       </div>
 
     </div><!-- /tab-convcompare -->
+
+    <div class="tab-content" id="tab-newdigital">
+
+      <!-- ── HEADER ── -->
+      <div style="background:linear-gradient(135deg,#1a1916 0%,#0f172a 100%);border-radius:12px;padding:20px 24px;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;border:1px solid rgba(245,158,11,0.2);">
+        <div>
+          <div style="font-family:var(--mono);font-size:10px;font-weight:700;letter-spacing:0.18em;text-transform:uppercase;color:rgba(245,158,11,0.7);margin-bottom:5px;">📊 Aaalay Hostels · CRM & Lead Management</div>
+          <div style="font-size:20px;font-weight:800;color:#fff;letter-spacing:-0.3px;">🆕 New Digital Leads — Since 20 Aug 2026</div>
+          <div style="font-size:11px;color:rgba(255,255,255,0.4);margin-top:4px;">Tracks only Digital Marketing leads registered on or after 20 Aug 2026 — kept separate from the overall Digital numbers in the Marketing tab.</div>
+        </div>
+        <span class="panel-badge badge-b" id="nd-header-badge" style="font-size:11px;">—</span>
+      </div>
+
+      <!-- ── KPI STRIP ── -->
+      <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:10px;margin-bottom:16px;" id="nd-kpis"></div>
+
+      <!-- ── SOURCE-WISE BREAKDOWN ── -->
+      <div class="panel" style="margin-bottom:16px;border-top:3px solid var(--blue);">
+        <div class="panel-header">
+          <div>
+            <div class="panel-title">🎯 Source-wise Breakdown — New Digital Leads</div>
+            <div class="panel-sub">Every Digital Source / Campaign registered on or after 20 Aug 2026.</div>
+          </div>
+          <span class="panel-badge badge-b" id="nd-source-badge">—</span>
+        </div>
+        <div style="overflow-x:auto;" id="nd-source-wrap"></div>
+      </div>
+
+      <!-- ── STAGE-WISE BREAKDOWN ── -->
+      <div class="panel" style="margin-bottom:16px;border-top:3px solid var(--purple);">
+        <div class="panel-header">
+          <div>
+            <div class="panel-title">📊 Lead Stage Breakdown — New Digital Leads</div>
+            <div class="panel-sub">Stage distribution for the new-data window only.</div>
+          </div>
+          <span class="panel-badge badge-p" id="nd-stage-badge">—</span>
+        </div>
+        <div style="overflow-x:auto;" id="nd-stage-wrap"></div>
+      </div>
+
+      <!-- ── DAY-WISE TREND ── -->
+      <div class="panel" style="margin-bottom:16px;border-top:3px solid var(--amber);">
+        <div class="panel-header">
+          <div>
+            <div class="panel-title">📅 Day-wise Trend — New Digital Leads</div>
+            <div class="panel-sub">Daily lead volume, bookings and conversion since 20 Aug 2026.</div>
+          </div>
+          <span class="panel-badge badge-a" id="nd-daily-badge">—</span>
+        </div>
+        <div style="overflow-x:auto;" id="nd-daily-wrap"></div>
+      </div>
+
+      <div style="margin-top:4px;padding:10px 14px;background:rgba(245,158,11,0.06);border:1px solid rgba(245,158,11,0.2);border-radius:8px;font-size:11px;color:var(--muted);">
+        ⚠️ Note: This tab shows Digital leads with a User Registration Date on or after <strong>20 Aug 2026</strong> only. It is a subset of the "📱 Digital" group on the Marketing tab, isolated here so new campaign performance since the cutoff can be tracked without being diluted by older data.
+      </div>
+
+    </div><!-- /tab-newdigital -->
 
   </div><!-- /main -->
   <button class="scroll-top" onclick="window.scrollTo({top:0,behavior:'smooth'})">↑</button>
@@ -5987,6 +6045,10 @@ const MKT_DIGITAL_SET = new Set([
   'facebook/leadad/mit-wpu conversion stage','email',
   'adwords/adwords/adwords','social/facebook/na','facebook/leadad/na',
   'facebook/leadad/sb road july students leads','google-blog/na/na','social/non-hosteller/na',
+  // ── Added per management request (new Source/Campaign values → Digital) ──
+  'facebook/leadad/bk','facebook/leadad/aaalay_camikara',
+  'meta ads/awareness_video/mit_awareness_stage meta','email/na/na',
+  'gmblisting/organic/na','google ads curie/google_ads_search/curie landing page',
 ]);
 const MKT_BTL_SET = new Set([
   'kiosk/kiosk/na','poster/offline/na/na','standeescan/standee/standee',
@@ -6898,6 +6960,178 @@ function renderConvCompareTab() {
   }
 }
 
+// ══════════════════════════════════════════════════════
+// NEW DIGITAL — LEADS SINCE 20 AUG 2026 (tracked separately)
+// ══════════════════════════════════════════════════════
+const ND_START_DATE = new Date(2026, 7, 20, 0, 0, 0); // 20 Aug 2026 (month is 0-indexed)
+
+function ndIsOnOrAfterStart(r) {
+  const raw = (r['User Registration Date'] || r['Date'] || '').trim();
+  const d = parseAnyDate(raw);
+  if (!d) return false;
+  return d.getTime() >= ND_START_DATE.getTime();
+}
+
+function renderNewDigitalTab() {
+  if (!globalMetrics) return;
+  const allRows = globalMetrics.rows || [];
+  const rows = allRows.filter(r => mktGroup(r) === 'digital' && ndIsOnOrAfterStart(r));
+
+  const total   = rows.length;
+  const counts  = mktCounts(rows);
+  const books   = mktBooks(counts);
+  const conv    = total ? (books/total*100) : 0;
+  const hot     = counts['Hot Lead']||0;
+  const hotPct  = total ? (hot/total*100) : 0;
+  const leak    = (counts['Lost']||0) + (counts['Not Responding']||0);
+  const leakPct = total ? (leak/total*100) : 0;
+  const sourcesCount = new Set(rows.map(r=>mktGetSource(r))).size;
+
+  const headerBadge = document.getElementById('nd-header-badge');
+  if (headerBadge) headerBadge.textContent = `${total.toLocaleString()} leads · from 20 Aug 2026`;
+
+  // ── KPI STRIP ──
+  const kpiEl = document.getElementById('nd-kpis');
+  if (kpiEl) kpiEl.innerHTML = [
+    {tag:'New Digital Leads', val:total.toLocaleString(),  sub:'Since 20 Aug 2026',        col:'var(--blue)',   icon:'🆕'},
+    {tag:'Bookings',          val:books.toLocaleString(),  sub:conv.toFixed(1)+'% conversion', col:'#22c55e',   icon:'🛏'},
+    {tag:'Conversion %',      val:conv.toFixed(1)+'%',     sub:books+' bookings',          col:'var(--blue)',   icon:'📈'},
+    {tag:'Hot Leads',         val:hot.toLocaleString(),    sub:hotPct.toFixed(1)+'% of leads', col:'#ef4444',   icon:'🔥'},
+    {tag:'Leakage',           val:leak.toLocaleString(),   sub:leakPct.toFixed(1)+'% lost/no-response', col:'#f59e0b', icon:'⬇'},
+    {tag:'Active Sources',    val:sourcesCount.toLocaleString(), sub:'Distinct campaigns', col:'var(--purple)', icon:'🎯'},
+  ].map(k=>`<div class="kpi-card" style="border-left:3px solid ${k.col};background:var(--surface);border-top:none;border-right:1px solid var(--border);border-bottom:1px solid var(--border);border-radius:8px;">
+    <div class="kpi-tag">${k.icon} ${k.tag}</div>
+    <div class="kpi-number" style="color:${k.col};">${k.val}</div>
+    <div class="kpi-sub">${k.sub}</div>
+  </div>`).join('');
+
+  // ── SOURCE-WISE BREAKDOWN ──
+  const bySrc = {};
+  rows.forEach(r => {
+    const src = mktGetSource(r), st = mktGetStage(r);
+    if (!bySrc[src]) { bySrc[src] = {total:0}; MKT_STAGES.forEach(s=>bySrc[src][s]=0); }
+    bySrc[src].total++;
+    if (MKT_STAGES.includes(st)) bySrc[src][st]++;
+  });
+  const sortedSrc = Object.entries(bySrc).sort((a,b)=>b[1].total-a[1].total);
+  const grandSrc  = sortedSrc.reduce((s,[,v])=>s+v.total,0)||1;
+  const srcBadge  = document.getElementById('nd-source-badge');
+  if (srcBadge) srcBadge.textContent = `${sortedSrc.length} source${sortedSrc.length!==1?'s':''} · ${grandSrc===1&&sortedSrc.length===0?0:grandSrc} leads`;
+  const srcWrap = document.getElementById('nd-source-wrap');
+  if (srcWrap) {
+    if (sortedSrc.length === 0) {
+      srcWrap.innerHTML = `<div style="padding:24px;text-align:center;color:var(--muted);font-size:12px;">No Digital leads found with a User Registration Date on or after 20 Aug 2026 yet.</div>`;
+    } else {
+      srcWrap.innerHTML = `<table class="dt" style="min-width:1000px;">
+        <thead><tr>
+          <th style="min-width:30px;">#</th>
+          <th style="min-width:200px;">Source / Campaign</th>
+          ${MKT_STAGES.map(s=>`<th class="tr" style="font-size:9px;padding:6px 8px;white-space:nowrap;">${MKT_ICONS[s]||''} ${s.replace(' - Decision Pending','').replace('Payment - Non Mit','Pay-Non-MIT')}</th>`).join('')}
+          <th class="tr" style="background:var(--surface2);min-width:60px;">Total</th>
+          <th class="tr" style="min-width:65px;">Bookings</th>
+          <th style="min-width:90px;">Share</th>
+        </tr></thead>
+        <tbody>
+          ${sortedSrc.map(([src,v],i) => {
+            const bk    = mktBooks(v);
+            const share = (v.total/grandSrc*100).toFixed(1);
+            const barW  = Math.max(2, v.total/grandSrc*100);
+            return `<tr>
+              <td class="tm c-m" style="font-size:10px;">${i+1}</td>
+              <td class="fw6" style="max-width:220px;word-break:break-word;font-size:11px;">${src}</td>
+              ${MKT_STAGES.map(s=>{
+                const cnt = v[s]||0;
+                const col = MKT_COLORS[s]||'var(--muted)';
+                const isBk = ['Payment','Payment - Non Mit'].includes(s);
+                return `<td class="tm tr" style="color:${cnt>0?(isBk?'#22c55e':col):'var(--dim)'};font-weight:${cnt>0?700:400};font-size:${cnt>0?13:11}px;">${cnt>0?cnt:'—'}</td>`;
+              }).join('')}
+              <td class="tm tr" style="font-size:15px;font-weight:800;background:var(--surface2);">${v.total}</td>
+              <td class="tm tr" style="color:#22c55e;font-weight:800;font-size:14px;">${bk>0?bk:'—'}</td>
+              <td style="padding-right:12px;">
+                <div style="display:flex;align-items:center;gap:5px;">
+                  <div style="flex:1;height:5px;background:var(--bg);border-radius:3px;overflow:hidden;">
+                    <div style="width:${barW}%;height:100%;background:var(--blue);border-radius:3px;"></div>
+                  </div>
+                  <span style="font-family:var(--mono);font-size:10px;color:var(--muted);min-width:32px;">${share}%</span>
+                </div>
+              </td>
+            </tr>`;
+          }).join('')}
+        </tbody>
+      </table>`;
+    }
+  }
+
+  // ── STAGE-WISE BREAKDOWN ──
+  const stageBadge = document.getElementById('nd-stage-badge');
+  if (stageBadge) stageBadge.textContent = `${total.toLocaleString()} lead${total!==1?'s':''}`;
+  const stageWrap = document.getElementById('nd-stage-wrap');
+  if (stageWrap) {
+    stageWrap.innerHTML = `<table class="dt">
+      <thead><tr><th style="min-width:200px;">Lead Stage</th><th class="tr">Count</th><th class="tr">Share %</th></tr></thead>
+      <tbody>
+        ${MKT_STAGES.map(s=>{
+          const n   = counts[s]||0;
+          const pct = total ? (n/total*100).toFixed(1) : '0.0';
+          const isBk = ['Payment','Payment - Non Mit'].includes(s);
+          const col  = MKT_COLORS[s]||'var(--muted)';
+          return `<tr>
+            <td class="fw6">${MKT_ICONS[s]||''} ${s}</td>
+            <td class="tm tr" style="color:${n>0?(isBk?'#22c55e':col):'var(--dim)'};font-weight:${n>0?700:400};">${n>0?n:'—'}</td>
+            <td class="tm tr" style="color:var(--muted);">${pct}%</td>
+          </tr>`;
+        }).join('')}
+      </tbody>
+      <tfoot>
+        <tr style="background:linear-gradient(90deg,#1a1916,#0f172a);">
+          <td style="color:#fff;font-weight:800;padding:11px 14px;">Grand Total</td>
+          <td class="tm tr" style="color:#00ff88;font-size:15px;font-weight:900;">${total}</td>
+          <td class="tm tr" style="color:#fff;">100%</td>
+        </tr>
+      </tfoot>
+    </table>`;
+  }
+
+  // ── DAY-WISE TREND ──
+  const byDay = {};
+  rows.forEach(r => {
+    const raw = (r['User Registration Date'] || r['Date'] || '').trim();
+    const d   = parseAnyDate(raw);
+    const key = d ? `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}` : 'unknown';
+    if (!byDay[key]) byDay[key] = { date:d, rows:[] };
+    byDay[key].rows.push(r);
+  });
+  const dayKeys = Object.keys(byDay).sort();
+  const dailyBadge = document.getElementById('nd-daily-badge');
+  if (dailyBadge) dailyBadge.textContent = `${dayKeys.length} day${dayKeys.length!==1?'s':''}`;
+  const dailyWrap = document.getElementById('nd-daily-wrap');
+  if (dailyWrap) {
+    if (dayKeys.length === 0) {
+      dailyWrap.innerHTML = `<div style="padding:24px;text-align:center;color:var(--muted);font-size:12px;">No day-wise data available yet.</div>`;
+    } else {
+      dailyWrap.innerHTML = `<table class="dt">
+        <thead><tr><th style="min-width:100px;">Date</th><th class="tr">Leads</th><th class="tr">Bookings</th><th class="tr">Conv%</th><th class="tr">Hot Leads</th></tr></thead>
+        <tbody>
+          ${dayKeys.map(k => {
+            const bucket = byDay[k];
+            const c  = mktCounts(bucket.rows);
+            const bk = mktBooks(c);
+            const cv = bucket.rows.length ? (bk/bucket.rows.length*100).toFixed(1) : '0.0';
+            const label = bucket.date ? fmt(bucket.date) : 'Unknown';
+            return `<tr>
+              <td class="fw6">${label}</td>
+              <td class="tm tr">${bucket.rows.length}</td>
+              <td class="tm tr" style="color:#22c55e;font-weight:700;">${bk||'—'}</td>
+              <td class="tm tr" style="color:var(--blue);font-weight:700;">${cv}%</td>
+              <td class="tm tr" style="color:#ef4444;font-weight:700;">${c['Hot Lead']||'—'}</td>
+            </tr>`;
+          }).join('')}
+        </tbody>
+      </table>`;
+    }
+  }
+}
+
 function showTab(id,btn) {
   document.querySelectorAll('.tab-content').forEach(el=>el.classList.remove('active'));
   document.querySelectorAll('.nav-tab').forEach(el=>el.classList.remove('active'));
@@ -7042,6 +7276,12 @@ function showTab(id,btn) {
     gdfUpdateUI('agentperf', document.querySelector('#gdf-agentperf .gdf-pill.active'));
     const _m = globalMetrics || calculateMetrics(getFilteredRows());
     setTimeout(() => { renderAgentPerfTab(_m); }, 50);
+    return;
+  }
+
+  // ── NEW DIGITAL (SINCE 20 AUG 2026) ──
+  if (id === 'newdigital') {
+    setTimeout(() => { renderNewDigitalTab(); }, 50);
     return;
   }
 
