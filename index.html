@@ -583,7 +583,7 @@ button{font-family:var(--body);cursor:pointer;}
   <nav class="nav">
     <div class="nav-brand">AAALAY · CRM DASHBOARD</div>
     <div class="nav-tabs">
-      <button class="nav-tab" onclick="showTab('notmit',this)">🚫 Not-MIT Leads Analysis</button>
+      <button class="nav-tab" onclick="showTab('notmit',this)">🚫 Non-MIT Leads Analysis</button>
       <button class="nav-tab active" onclick="showTab('overview',this)">Funnel Overview</button>
       <button class="nav-tab" onclick="showTab('hot',this)">Hot Leads</button>
       <button class="nav-tab" onclick="showTab('warm',this)">Warm Leads</button>
@@ -616,9 +616,9 @@ button{font-family:var(--body);cursor:pointer;}
       <span class="owner-count-pill" id="ownerCountLabel"></span>
     </div>
 
-    <!-- ════ TAB 0: NOT-MIT LEADS ANALYSIS ════ -->
+    <!-- ════ TAB 0: NON-MIT LEADS ANALYSIS ════ -->
     <div class="tab-content" id="tab-notmit">
-      <div class="section-label">🚫 Not-MIT Leads Analysis · Non-Institutional Source / Campaign · Data From August 2026 <span id="nm-count-badge" style="margin-left:8px;color:var(--muted);font-family:var(--mono);font-weight:400;text-transform:none;letter-spacing:0;"></span></div>
+      <div class="section-label">🚫 Non-MIT Leads Analysis · Non-Institutional Source / Campaign · Data From August 2026 <span id="nm-count-badge" style="margin-left:8px;color:var(--muted);font-family:var(--mono);font-weight:400;text-transform:none;letter-spacing:0;"></span></div>
 
       <!-- FILTER BAR -->
       <div class="gdf-bar" style="flex-wrap:wrap;">
@@ -657,7 +657,7 @@ button{font-family:var(--body);cursor:pointer;}
         <!-- LEAD QUALITY -->
         <div class="panel">
           <div class="panel-header">
-            <div><div class="panel-title">🏆 Lead Quality — Overall Leads</div><div class="panel-sub">Count + percentage share of each stage, Not-MIT dataset only.</div></div>
+            <div><div class="panel-title">🏆 Lead Quality — Overall Leads</div><div class="panel-sub">Count + percentage share of each stage, Non-MIT dataset only.</div></div>
             <span class="panel-badge badge-b" id="nm-quality-badge">—</span>
           </div>
           <div class="panel-body" style="padding:0;"><table class="dt"><tbody id="nm-quality"></tbody></table></div>
@@ -675,7 +675,7 @@ button{font-family:var(--body);cursor:pointer;}
       <!-- MONTH WISE BREAKDOWN OVERALL -->
       <div class="panel">
         <div class="panel-header">
-          <div><div class="panel-title">📅 Month-Wise Breakdown — Overall</div><div class="panel-sub">Total Not-MIT leads and stage split, month over month since August 2026.</div></div>
+          <div><div class="panel-title">📅 Month-Wise Breakdown — Overall</div><div class="panel-sub">Total Non-MIT leads and stage split, month over month since August 2026.</div></div>
           <span class="panel-badge badge-g" id="nm-month-overall-badge">—</span>
         </div>
         <div class="panel-body" style="padding:0;overflow-x:auto;"><table class="dt"><tbody id="nm-month-overall"></tbody></table></div>
@@ -684,7 +684,7 @@ button{font-family:var(--body);cursor:pointer;}
       <!-- AGENT WISE PERFORMANCE -->
       <div class="panel">
         <div class="panel-header">
-          <div><div class="panel-title">👤 Agent-Wise Performance</div><div class="panel-sub">Full funnel breakdown per agent, Not-MIT leads only.</div></div>
+          <div><div class="panel-title">👤 Agent-Wise Performance</div><div class="panel-sub">Full funnel breakdown per agent, Non-MIT leads only.</div></div>
           <span class="panel-badge badge-b" id="nm-agentperf-badge">—</span>
         </div>
         <div class="panel-body" style="padding:0;overflow-x:auto;"><table class="dt"><tbody id="nm-agent-perf"></tbody></table></div>
@@ -725,10 +725,10 @@ button{font-family:var(--body);cursor:pointer;}
       <!-- SOURCE / CAMPAIGN TABLE -->
       <div class="panel">
         <div class="panel-header">
-          <div><div class="panel-title">🎯 Source / Campaign — Full Breakdown</div><div class="panel-sub">Every Not-MIT source/campaign combination — lead count, stage split &amp; conversion. Helps management decide where to focus offline/BTL/agent-sourced spend.</div></div>
+          <div><div class="panel-title">🎯 Source / Campaign — Full Breakdown</div><div class="panel-sub">Every Non-MIT source/campaign combination — lead count, stage split &amp; conversion. Helps management decide where to focus offline/BTL/agent-sourced spend.</div></div>
           <span class="panel-badge badge-gray" id="nm-source-badge">—</span>
         </div>
-        <div class="panel-body" style="padding:0;overflow-x:auto;"><table class="dt"><thead><tr><th>Source / Campaign</th><th class="tr">Leads</th><th class="tr">% Share</th><th class="tr">Hot</th><th class="tr">Warm</th><th class="tr">Booking</th><th class="tr">Cold</th><th class="tr">Lost</th><th class="tr">Conv %</th></tr></thead><tbody id="nm-source-table"></tbody></table></div>
+        <div class="panel-body" style="padding:0;overflow-x:auto;"><table class="dt"><thead><tr><th>Source / Campaign</th><th class="tr">Leads</th><th class="tr">% Share</th><th class="tr">Hot</th><th class="tr">Warm</th><th class="tr">Booking/Payment (Payment - Non Mit)</th><th class="tr">Cold</th><th class="tr">Lost</th><th class="tr">Conv %</th></tr></thead><tbody id="nm-source-table"></tbody></table></div>
       </div>
     </div>
 
@@ -7533,7 +7533,7 @@ function renderAgentPerfTab(m) {
 }
 
 // ══════════════════════════════════════════════════════
-// NOT-MIT LEADS ANALYSIS TAB
+// NON-MIT LEADS ANALYSIS TAB
 // Filters to an exact whitelist of Source/Campaign combos
 // (independent, offline/BTL/agent-sourced/organic leads —
 // i.e. everything that is NOT the MIT/WPU institutional feed)
@@ -7572,7 +7572,7 @@ function nmIsNotMit(r) {
 
 let nmState = { preset: 'all', from: null, to: null, agent: 'all', source: 'all' };
 
-// Base rows: Not-MIT whitelist + floor date (>= 1 Aug 2026)
+// Base rows: Non-MIT whitelist + floor date (>= 1 Aug 2026)
 function nmBaseRows() {
   return (rawRows || []).filter(r => {
     if (!nmIsNotMit(r)) return false;
@@ -7660,8 +7660,9 @@ function nmMonthLabel(key) {
 }
 function nmAgentOf(r) { return ownerShort(r['Lead Owner']||'') || 'Unassigned'; }
 function nmIsBooking(r) {
-  const sub = (r['Lead Sub Stage']||'').trim();
-  return sub === 'Booking Done' || sub === 'Retention Done' || sub === 'Lateral Booking';
+  // Per management: Booking/Payment count for the Non-MIT tab comes strictly
+  // from Lead Stage = "Payment - Non Mit" (the CRM's Non-MIT payment stage).
+  return (r['Lead Stage']||'').trim() === 'Payment - Non Mit';
 }
 
 // ── Master render ──
@@ -7715,16 +7716,16 @@ function nmRenderKpis(m, rows) {
   const el = document.getElementById('nm-kpis');
   if (!el) return;
   const total = rows.length;
-  const bookings = rows.filter(nmIsBooking).length;
+  const bookings = rows.filter(nmIsBooking).length; // Lead Stage = "Payment - Non Mit"
   const conv = total>0 ? (bookings/total*100).toFixed(1) : '0.0';
   const leakage = m.lost.length + m.notResponding.length + m.cold.length;
   const leakagePct = total>0 ? (leakage/total*100).toFixed(1) : '0.0';
   const kpis = [
-    { tag:'Total Not-MIT Leads', val:total.toLocaleString(), sub:'Since Aug 2026 · whitelist sources', color:'blue' },
+    { tag:'Total Non-MIT Leads', val:total.toLocaleString(), sub:'Since Aug 2026 · whitelist sources', color:'blue' },
     { tag:'Hot Leads',   val:m.hot.length,     sub:'Active, high-priority', color:'green' },
     { tag:'Warm Leads',  val:m.warm.length,    sub:'Decision pending',       color:'amber' },
-    { tag:'Bookings',    val:bookings,         sub:'Booking/Retention/Lateral', color:'purple' },
-    { tag:'Conversion %',val:conv+'%',         sub:'Bookings ÷ total leads', color:parseFloat(conv)>=10?'green':parseFloat(conv)>=5?'amber':'red' },
+    { tag:'Booking / Payment', val:bookings,   sub:'Lead Stage = Payment - Non Mit', color:'purple' },
+    { tag:'Conversion %',val:conv+'%',         sub:'Booking ÷ total leads', color:parseFloat(conv)>=10?'green':parseFloat(conv)>=5?'amber':'red' },
     { tag:'Cold Leads',  val:m.cold.length,    sub:'Needs re-engagement',    color:'blue' },
     { tag:'Not Responding', val:m.notResponding.length, sub:'No contact yet', color:'amber' },
     { tag:'Leakage %',   val:leakagePct+'%',   sub:`${leakage} cold+lost+NR`, color:parseFloat(leakagePct)>40?'red':parseFloat(leakagePct)>20?'amber':'green' },
@@ -7741,10 +7742,11 @@ function nmRenderQuality(m, rows) {
   const tbody = document.getElementById('nm-quality');
   if (!tbody) return;
   const total = rows.length || 1;
+  const paymentNonMit = rows.filter(nmIsBooking).length; // Lead Stage = "Payment - Non Mit"
   const stages = [
     { label:'🔥 Hot Lead', n:m.hot.length, cls:'c-g' },
     { label:'🟡 Warm Lead - Decision Pending', n:m.warm.length, cls:'c-a' },
-    { label:'💳 Payment', n:m.payment.length, cls:'c-p' },
+    { label:'💳 Payment - Non Mit (Booking)', n:paymentNonMit, cls:'c-p' },
     { label:'🧊 Cold Lead', n:m.cold.length, cls:'c-b' },
     { label:'🔕 Not Responding', n:m.notResponding.length, cls:'c-m' },
     { label:'❌ Lost', n:m.lost.length, cls:'c-r' },
@@ -7769,37 +7771,36 @@ function nmRenderMonthOverall(rows) {
   const map = {};
   rows.forEach(r => {
     const k = nmMonthKey(r); if (!k) return;
-    if (!map[k]) map[k] = { total:0, hot:0, warm:0, payment:0, cold:0, nr:0, lost:0, booking:0 };
+    if (!map[k]) map[k] = { total:0, hot:0, warm:0, cold:0, nr:0, lost:0, booking:0 };
     map[k].total++;
     const stage = (r['Lead Stage']||'').trim();
     if (stage==='Hot Lead') map[k].hot++;
     else if (stage==='Warm Lead - Decision Pending') map[k].warm++;
-    else if (stage==='Payment') map[k].payment++;
     else if (stage==='Cold Lead') map[k].cold++;
     else if (stage==='Not Responding') map[k].nr++;
     else if (stage==='Lost') map[k].lost++;
-    if (nmIsBooking(r)) map[k].booking++;
+    if (nmIsBooking(r)) map[k].booking++; // Lead Stage = "Payment - Non Mit"
   });
   const keys = Object.keys(map).sort();
   if (badge) badge.textContent = `${keys.length} month${keys.length===1?'':'s'}`;
-  const header = `<tr><th>Month</th><th class="tr">Total</th><th class="tr">Hot</th><th class="tr">Warm</th><th class="tr">Payment</th><th class="tr">Cold</th><th class="tr">Not Resp.</th><th class="tr">Lost</th><th class="tr">Bookings</th><th class="tr">Conv %</th></tr>`;
+  const header = `<tr><th>Month</th><th class="tr">Total</th><th class="tr">Hot</th><th class="tr">Warm</th><th class="tr">Cold</th><th class="tr">Not Resp.</th><th class="tr">Lost</th><th class="tr">Booking/Payment (Payment - Non Mit)</th><th class="tr">Conv %</th></tr>`;
   const bodyRows = keys.map(k => {
     const d = map[k];
     const conv = d.total>0 ? (d.booking/d.total*100).toFixed(1) : '0.0';
     return `<tr><td class="fw6">${nmMonthLabel(k)}</td>
       <td class="tr tm">${d.total}</td><td class="tr tm c-g">${d.hot}</td><td class="tr tm c-a">${d.warm}</td>
-      <td class="tr tm c-p">${d.payment}</td><td class="tr tm c-b">${d.cold}</td><td class="tr tm c-m">${d.nr}</td>
-      <td class="tr tm c-r">${d.lost}</td><td class="tr tm fw6">${d.booking}</td>
+      <td class="tr tm c-b">${d.cold}</td><td class="tr tm c-m">${d.nr}</td>
+      <td class="tr tm c-r">${d.lost}</td><td class="tr tm fw6 c-p">${d.booking}</td>
       <td class="tr tm fw6" style="color:${parseFloat(conv)>=10?'var(--green)':parseFloat(conv)>=5?'var(--amber)':'var(--red)'};">${conv}%</td></tr>`;
   }).join('');
-  const tGrand = Object.values(map).reduce((s,d)=>({total:s.total+d.total,hot:s.hot+d.hot,warm:s.warm+d.warm,payment:s.payment+d.payment,cold:s.cold+d.cold,nr:s.nr+d.nr,lost:s.lost+d.lost,booking:s.booking+d.booking}),{total:0,hot:0,warm:0,payment:0,cold:0,nr:0,lost:0,booking:0});
+  const tGrand = Object.values(map).reduce((s,d)=>({total:s.total+d.total,hot:s.hot+d.hot,warm:s.warm+d.warm,cold:s.cold+d.cold,nr:s.nr+d.nr,lost:s.lost+d.lost,booking:s.booking+d.booking}),{total:0,hot:0,warm:0,cold:0,nr:0,lost:0,booking:0});
   const tConv = tGrand.total>0 ? (tGrand.booking/tGrand.total*100).toFixed(1) : '0.0';
   const footer = keys.length ? `<tr style="background:var(--surface2);border-top:2px solid var(--border2);">
       <td class="fw6">GRAND TOTAL</td><td class="tr tm fw6">${tGrand.total}</td><td class="tr tm fw6 c-g">${tGrand.hot}</td>
-      <td class="tr tm fw6 c-a">${tGrand.warm}</td><td class="tr tm fw6 c-p">${tGrand.payment}</td><td class="tr tm fw6 c-b">${tGrand.cold}</td>
-      <td class="tr tm fw6 c-m">${tGrand.nr}</td><td class="tr tm fw6 c-r">${tGrand.lost}</td><td class="tr tm fw6">${tGrand.booking}</td>
+      <td class="tr tm fw6 c-a">${tGrand.warm}</td><td class="tr tm fw6 c-b">${tGrand.cold}</td>
+      <td class="tr tm fw6 c-m">${tGrand.nr}</td><td class="tr tm fw6 c-r">${tGrand.lost}</td><td class="tr tm fw6 c-p">${tGrand.booking}</td>
       <td class="tr tm fw6">${tConv}%</td></tr>` : '';
-  tbody.innerHTML = header + (bodyRows || `<tr><td colspan="10" style="padding:16px;color:var(--muted);">No leads in this range.</td></tr>`) + footer;
+  tbody.innerHTML = header + (bodyRows || `<tr><td colspan="9" style="padding:16px;color:var(--muted);">No leads in this range.</td></tr>`) + footer;
 }
 
 function nmRenderAgentPerf(rows) {
@@ -7808,28 +7809,27 @@ function nmRenderAgentPerf(rows) {
   const map = {};
   rows.forEach(r => {
     const ag = nmAgentOf(r);
-    if (!map[ag]) map[ag] = { agent:ag, total:0, hot:0, warm:0, payment:0, cold:0, nr:0, lost:0, untouched:0, booking:0 };
+    if (!map[ag]) map[ag] = { agent:ag, total:0, hot:0, warm:0, cold:0, nr:0, lost:0, untouched:0, booking:0 };
     map[ag].total++;
     const stage = (r['Lead Stage']||'').trim();
     if (stage==='Hot Lead') map[ag].hot++;
     else if (stage==='Warm Lead - Decision Pending') map[ag].warm++;
-    else if (stage==='Payment') map[ag].payment++;
     else if (stage==='Cold Lead') map[ag].cold++;
     else if (stage==='Not Responding') map[ag].nr++;
     else if (stage==='Lost') map[ag].lost++;
     else if (stage==='Untouched') map[ag].untouched++;
-    if (nmIsBooking(r)) map[ag].booking++;
+    if (nmIsBooking(r)) map[ag].booking++; // Lead Stage = "Payment - Non Mit"
   });
   const agents = Object.values(map).map(a => ({...a, conv: a.total>0?(a.booking/a.total*100):0, leakage: a.cold+a.nr+a.lost})).sort((a,b)=>b.total-a.total);
   if (badge) badge.textContent = `${agents.length} agent${agents.length===1?'':'s'}`;
   if (!tbody) return agents;
-  const header = `<tr><th>Agent</th><th class="tr">Total</th><th class="tr">Hot</th><th class="tr">Warm</th><th class="tr">Payment</th><th class="tr">Cold</th><th class="tr">Not Resp.</th><th class="tr">Lost</th><th class="tr">Untouched</th><th class="tr">Bookings</th><th class="tr">Conv %</th></tr>`;
+  const header = `<tr><th>Agent</th><th class="tr">Total</th><th class="tr">Hot</th><th class="tr">Warm</th><th class="tr">Cold</th><th class="tr">Not Resp.</th><th class="tr">Lost</th><th class="tr">Untouched</th><th class="tr">Booking/Payment (Payment - Non Mit)</th><th class="tr">Conv %</th></tr>`;
   const bodyRows = agents.map(a => `<tr><td class="fw6">${a.agent}</td>
       <td class="tr tm">${a.total}</td><td class="tr tm c-g">${a.hot}</td><td class="tr tm c-a">${a.warm}</td>
-      <td class="tr tm c-p">${a.payment}</td><td class="tr tm c-b">${a.cold}</td><td class="tr tm c-m">${a.nr}</td>
-      <td class="tr tm c-r">${a.lost}</td><td class="tr tm c-m">${a.untouched}</td><td class="tr tm fw6">${a.booking}</td>
+      <td class="tr tm c-b">${a.cold}</td><td class="tr tm c-m">${a.nr}</td>
+      <td class="tr tm c-r">${a.lost}</td><td class="tr tm c-m">${a.untouched}</td><td class="tr tm fw6 c-p">${a.booking}</td>
       <td class="tr tm fw6" style="color:${a.conv>=10?'var(--green)':a.conv>=5?'var(--amber)':'var(--red)'};">${a.conv.toFixed(1)}%</td></tr>`).join('');
-  tbody.innerHTML = header + (bodyRows || `<tr><td colspan="11" style="padding:16px;color:var(--muted);">No leads in this range.</td></tr>`);
+  tbody.innerHTML = header + (bodyRows || `<tr><td colspan="10" style="padding:16px;color:var(--muted);">No leads in this range.</td></tr>`);
   return agents;
 }
 
@@ -7948,7 +7948,7 @@ function nmRenderWarnings(agentStats, complianceStats) {
   }
   el.innerHTML = flagged.map(f => `
     <div style="padding:12px 16px;border-bottom:1px solid var(--border);">
-      <div style="font-size:12px;font-weight:700;margin-bottom:6px;color:var(--red);">⚠️ ${f.agent} <span style="color:var(--muted);font-weight:400;font-family:var(--mono);font-size:10px;">(${f.total} Not-MIT leads)</span></div>
+      <div style="font-size:12px;font-weight:700;margin-bottom:6px;color:var(--red);">⚠️ ${f.agent} <span style="color:var(--muted);font-weight:400;font-family:var(--mono);font-size:10px;">(${f.total} Non-MIT leads)</span></div>
       <ul style="margin:0;padding-left:18px;font-size:11.5px;color:var(--muted);line-height:1.8;">
         ${f.issues.map(i=>`<li>${i}</li>`).join('')}
       </ul>
