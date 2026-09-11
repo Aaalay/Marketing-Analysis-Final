@@ -583,6 +583,7 @@ button{font-family:var(--body);cursor:pointer;}
   <nav class="nav">
     <div class="nav-brand">AAALAY · CRM DASHBOARD</div>
     <div class="nav-tabs">
+      <button class="nav-tab" onclick="showTab('notmit',this)">🚫 Not-MIT Leads Analysis</button>
       <button class="nav-tab active" onclick="showTab('overview',this)">Funnel Overview</button>
       <button class="nav-tab" onclick="showTab('hot',this)">Hot Leads</button>
       <button class="nav-tab" onclick="showTab('warm',this)">Warm Leads</button>
@@ -597,7 +598,6 @@ button{font-family:var(--body);cursor:pointer;}
       <button class="nav-tab" onclick="showTab('marketing',this)">📊 Marketing</button>
       <button class="nav-tab" onclick="showTab('agentperf',this)">👤 Agent Wise Performance</button>
       <button class="nav-tab" onclick="showTab('convcompare',this)">⚖️ Digital vs BTL Conversion</button>
-      <button class="nav-tab" onclick="showTab('newdigital',this)">🆕 New Digital (Since 20 Aug'26)</button>
     </div>
     <div class="nav-right">
       <div class="file-pill"><div class="live-dot"></div><span id="navFilename">—</span></div>
@@ -614,6 +614,122 @@ button{font-family:var(--body);cursor:pointer;}
       <div class="owner-filter-sep"></div>
       <div id="ownerPillsContainer" style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;"></div>
       <span class="owner-count-pill" id="ownerCountLabel"></span>
+    </div>
+
+    <!-- ════ TAB 0: NOT-MIT LEADS ANALYSIS ════ -->
+    <div class="tab-content" id="tab-notmit">
+      <div class="section-label">🚫 Not-MIT Leads Analysis · Non-Institutional Source / Campaign · Data From August 2026 <span id="nm-count-badge" style="margin-left:8px;color:var(--muted);font-family:var(--mono);font-weight:400;text-transform:none;letter-spacing:0;"></span></div>
+
+      <!-- FILTER BAR -->
+      <div class="gdf-bar" style="flex-wrap:wrap;">
+        <span class="gdf-label">Date:</span>
+        <span class="gdf-pill active" data-preset="all"        onclick="nmApplyPreset('all',this)">Since Aug 2026</span>
+        <span class="gdf-pill"        data-preset="today"      onclick="nmApplyPreset('today',this)">Today</span>
+        <span class="gdf-pill"        data-preset="yesterday"  onclick="nmApplyPreset('yesterday',this)">Yesterday</span>
+        <span class="gdf-pill"        data-preset="7"          onclick="nmApplyPreset('7',this)">Last 7 Days</span>
+        <span class="gdf-pill"        data-preset="14"         onclick="nmApplyPreset('14',this)">Last 14 Days</span>
+        <span class="gdf-pill"        data-preset="30"         onclick="nmApplyPreset('30',this)">Last 30 Days</span>
+        <span class="gdf-pill"        data-preset="thismonth"  onclick="nmApplyPreset('thismonth',this)">This Month</span>
+        <span class="gdf-pill"        data-preset="lastmonth"  onclick="nmApplyPreset('lastmonth',this)">Last Month</span>
+        <div class="gdf-sep"></div>
+        <div class="gdf-custom-wrap">
+          <input type="date" class="gdf-input" id="nm-from" min="2026-08-01" onchange="nmApplyPreset('custom',null)">
+          <span class="gdf-arrow">→</span>
+          <input type="date" class="gdf-input" id="nm-to" min="2026-08-01" onchange="nmApplyPreset('custom',null)">
+        </div>
+        <div class="gdf-sep"></div>
+        <span class="gdf-label">Agent:</span>
+        <select id="nm-agent-select" class="gdf-input" style="min-width:140px;" onchange="nmSetAgent(this.value)">
+          <option value="all">All Agents</option>
+        </select>
+        <span class="gdf-label">Source / Campaign:</span>
+        <select id="nm-source-select" class="gdf-input" style="min-width:180px;" onchange="nmSetSource(this.value)">
+          <option value="all">All Sources</option>
+        </select>
+        <button class="gdf-clear" onclick="nmResetFilters()">✕ Reset</button>
+        <span class="gdf-count" id="nm-gdf-count"></span>
+      </div>
+
+      <!-- KPI STRIP -->
+      <div class="kpi-grid" id="nm-kpis"></div>
+
+      <div class="grid-2">
+        <!-- LEAD QUALITY -->
+        <div class="panel">
+          <div class="panel-header">
+            <div><div class="panel-title">🏆 Lead Quality — Overall Leads</div><div class="panel-sub">Count + percentage share of each stage, Not-MIT dataset only.</div></div>
+            <span class="panel-badge badge-b" id="nm-quality-badge">—</span>
+          </div>
+          <div class="panel-body" style="padding:0;"><table class="dt"><tbody id="nm-quality"></tbody></table></div>
+        </div>
+        <!-- SCORECARD -->
+        <div class="panel">
+          <div class="panel-header">
+            <div><div class="panel-title">📈 Scorecard — Performance Signals</div><div class="panel-sub">Composite of conversion, follow-up compliance & leakage.</div></div>
+            <span class="panel-badge badge-p" id="nm-scorecard-badge">—</span>
+          </div>
+          <div class="panel-body" style="padding:0;"><table class="dt"><thead><tr><th>Agent</th><th class="tr">Conv %</th><th class="tr">Compliance %</th><th class="tr">Leakage %</th><th>Rating</th></tr></thead><tbody id="nm-scorecard"></tbody></table></div>
+        </div>
+      </div>
+
+      <!-- MONTH WISE BREAKDOWN OVERALL -->
+      <div class="panel">
+        <div class="panel-header">
+          <div><div class="panel-title">📅 Month-Wise Breakdown — Overall</div><div class="panel-sub">Total Not-MIT leads and stage split, month over month since August 2026.</div></div>
+          <span class="panel-badge badge-g" id="nm-month-overall-badge">—</span>
+        </div>
+        <div class="panel-body" style="padding:0;overflow-x:auto;"><table class="dt"><tbody id="nm-month-overall"></tbody></table></div>
+      </div>
+
+      <!-- AGENT WISE PERFORMANCE -->
+      <div class="panel">
+        <div class="panel-header">
+          <div><div class="panel-title">👤 Agent-Wise Performance</div><div class="panel-sub">Full funnel breakdown per agent, Not-MIT leads only.</div></div>
+          <span class="panel-badge badge-b" id="nm-agentperf-badge">—</span>
+        </div>
+        <div class="panel-body" style="padding:0;overflow-x:auto;"><table class="dt"><tbody id="nm-agent-perf"></tbody></table></div>
+      </div>
+
+      <!-- MONTH WISE DATA TABLE (AGENT x MONTH) -->
+      <div class="panel">
+        <div class="panel-header">
+          <div><div class="panel-title">🗓 Month Wise Data Table — Agent × Month</div><div class="panel-sub">Lead volume handled by each agent, broken down by month.</div></div>
+          <span class="panel-badge badge-gray" id="nm-month-matrix-badge">—</span>
+        </div>
+        <div class="panel-body" style="padding:0;overflow-x:auto;"><table class="dt"><tbody id="nm-month-matrix"></tbody></table></div>
+      </div>
+
+      <!-- FOLLOWUP COMPLIANCE / AGEING / SLA -->
+      <div class="panel">
+        <div class="panel-header">
+          <div><div class="panel-title">⏱ Agent-Wise Follow-up Compliance — Ageing &amp; SLA Alerts</div><div class="panel-sub">Hostel/PG SLA logic: Hot ≤1 day · Warm ≤2 days · Cold/Not-Responding ≤4 days since last activity.</div></div>
+          <span class="panel-badge badge-a" id="nm-compliance-badge">—</span>
+        </div>
+        <div class="panel-body" style="padding:0;overflow-x:auto;"><table class="dt"><thead><tr><th>Agent</th><th class="tr">Total</th><th class="tr">Compliant</th><th class="tr">Overdue (SLA Breach)</th><th class="tr">Approaching SLA</th><th class="tr">Avg Age (days)</th><th>Compliance %</th></tr></thead><tbody id="nm-compliance"></tbody></table></div>
+        <div class="comply-legend">
+          <span><span class="cleg-dot" style="background:var(--green);"></span>On Track ≥75%</span>
+          <span><span class="cleg-dot" style="background:var(--amber);"></span>Needs Attention 50–74%</span>
+          <span><span class="cleg-dot" style="background:var(--red);"></span>Critical &lt;50%</span>
+        </div>
+      </div>
+
+      <!-- WARNINGS -->
+      <div class="panel">
+        <div class="panel-header">
+          <div><div class="panel-title">⚠️ Warnings — Non-Performing Agents &amp; Improvement Suggestions</div><div class="panel-sub">Auto-flagged from conversion, SLA compliance and leakage signals above.</div></div>
+          <span class="panel-badge badge-r" id="nm-warning-badge">—</span>
+        </div>
+        <div class="panel-body" id="nm-warnings"></div>
+      </div>
+
+      <!-- SOURCE / CAMPAIGN TABLE -->
+      <div class="panel">
+        <div class="panel-header">
+          <div><div class="panel-title">🎯 Source / Campaign — Full Breakdown</div><div class="panel-sub">Every Not-MIT source/campaign combination — lead count, stage split &amp; conversion. Helps management decide where to focus offline/BTL/agent-sourced spend.</div></div>
+          <span class="panel-badge badge-gray" id="nm-source-badge">—</span>
+        </div>
+        <div class="panel-body" style="padding:0;overflow-x:auto;"><table class="dt"><thead><tr><th>Source / Campaign</th><th class="tr">Leads</th><th class="tr">% Share</th><th class="tr">Hot</th><th class="tr">Warm</th><th class="tr">Booking</th><th class="tr">Cold</th><th class="tr">Lost</th><th class="tr">Conv %</th></tr></thead><tbody id="nm-source-table"></tbody></table></div>
+      </div>
     </div>
 
     <!-- ════ TAB 1: FUNNEL OVERVIEW ════ -->
@@ -1922,63 +2038,6 @@ button{font-family:var(--body);cursor:pointer;}
       </div>
 
     </div><!-- /tab-convcompare -->
-
-    <div class="tab-content" id="tab-newdigital">
-
-      <!-- ── HEADER ── -->
-      <div style="background:linear-gradient(135deg,#1a1916 0%,#0f172a 100%);border-radius:12px;padding:20px 24px;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;border:1px solid rgba(245,158,11,0.2);">
-        <div>
-          <div style="font-family:var(--mono);font-size:10px;font-weight:700;letter-spacing:0.18em;text-transform:uppercase;color:rgba(245,158,11,0.7);margin-bottom:5px;">📊 Aaalay Hostels · CRM & Lead Management</div>
-          <div style="font-size:20px;font-weight:800;color:#fff;letter-spacing:-0.3px;">🆕 New Digital Leads — Since 20 Aug 2026</div>
-          <div style="font-size:11px;color:rgba(255,255,255,0.4);margin-top:4px;">Tracks only Digital Marketing leads registered on or after 20 Aug 2026 — kept separate from the overall Digital numbers in the Marketing tab.</div>
-        </div>
-        <span class="panel-badge badge-b" id="nd-header-badge" style="font-size:11px;">—</span>
-      </div>
-
-      <!-- ── KPI STRIP ── -->
-      <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:10px;margin-bottom:16px;" id="nd-kpis"></div>
-
-      <!-- ── SOURCE-WISE BREAKDOWN ── -->
-      <div class="panel" style="margin-bottom:16px;border-top:3px solid var(--blue);">
-        <div class="panel-header">
-          <div>
-            <div class="panel-title">🎯 Source-wise Breakdown — New Digital Leads</div>
-            <div class="panel-sub">Every Digital Source / Campaign registered on or after 20 Aug 2026.</div>
-          </div>
-          <span class="panel-badge badge-b" id="nd-source-badge">—</span>
-        </div>
-        <div style="overflow-x:auto;" id="nd-source-wrap"></div>
-      </div>
-
-      <!-- ── STAGE-WISE BREAKDOWN ── -->
-      <div class="panel" style="margin-bottom:16px;border-top:3px solid var(--purple);">
-        <div class="panel-header">
-          <div>
-            <div class="panel-title">📊 Lead Stage Breakdown — New Digital Leads</div>
-            <div class="panel-sub">Stage distribution for the new-data window only.</div>
-          </div>
-          <span class="panel-badge badge-p" id="nd-stage-badge">—</span>
-        </div>
-        <div style="overflow-x:auto;" id="nd-stage-wrap"></div>
-      </div>
-
-      <!-- ── DAY-WISE TREND ── -->
-      <div class="panel" style="margin-bottom:16px;border-top:3px solid var(--amber);">
-        <div class="panel-header">
-          <div>
-            <div class="panel-title">📅 Day-wise Trend — New Digital Leads</div>
-            <div class="panel-sub">Daily lead volume, bookings and conversion since 20 Aug 2026.</div>
-          </div>
-          <span class="panel-badge badge-a" id="nd-daily-badge">—</span>
-        </div>
-        <div style="overflow-x:auto;" id="nd-daily-wrap"></div>
-      </div>
-
-      <div style="margin-top:4px;padding:10px 14px;background:rgba(245,158,11,0.06);border:1px solid rgba(245,158,11,0.2);border-radius:8px;font-size:11px;color:var(--muted);">
-        ⚠️ Note: This tab shows Digital leads with a User Registration Date on or after <strong>20 Aug 2026</strong> only. It is a subset of the "📱 Digital" group on the Marketing tab, isolated here so new campaign performance since the cutoff can be tracked without being diluted by older data.
-      </div>
-
-    </div><!-- /tab-newdigital -->
 
   </div><!-- /main -->
   <button class="scroll-top" onclick="window.scrollTo({top:0,behavior:'smooth'})">↑</button>
@@ -6045,10 +6104,6 @@ const MKT_DIGITAL_SET = new Set([
   'facebook/leadad/mit-wpu conversion stage','email',
   'adwords/adwords/adwords','social/facebook/na','facebook/leadad/na',
   'facebook/leadad/sb road july students leads','google-blog/na/na','social/non-hosteller/na',
-  // ── Added per management request (new Source/Campaign values → Digital) ──
-  'facebook/leadad/bk','facebook/leadad/aaalay_camikara',
-  'meta ads/awareness_video/mit_awareness_stage meta','email/na/na',
-  'gmblisting/organic/na','google ads curie/google_ads_search/curie landing page',
 ]);
 const MKT_BTL_SET = new Set([
   'kiosk/kiosk/na','poster/offline/na/na','standeescan/standee/standee',
@@ -6960,184 +7015,17 @@ function renderConvCompareTab() {
   }
 }
 
-// ══════════════════════════════════════════════════════
-// NEW DIGITAL — LEADS SINCE 20 AUG 2026 (tracked separately)
-// ══════════════════════════════════════════════════════
-const ND_START_DATE = new Date(2026, 7, 20, 0, 0, 0); // 20 Aug 2026 (month is 0-indexed)
-
-function ndIsOnOrAfterStart(r) {
-  const raw = (r['User Registration Date'] || r['Date'] || '').trim();
-  const d = parseAnyDate(raw);
-  if (!d) return false;
-  return d.getTime() >= ND_START_DATE.getTime();
-}
-
-function renderNewDigitalTab() {
-  if (!globalMetrics) return;
-  const allRows = globalMetrics.rows || [];
-  const rows = allRows.filter(r => mktGroup(r) === 'digital' && ndIsOnOrAfterStart(r));
-
-  const total   = rows.length;
-  const counts  = mktCounts(rows);
-  const books   = mktBooks(counts);
-  const conv    = total ? (books/total*100) : 0;
-  const hot     = counts['Hot Lead']||0;
-  const hotPct  = total ? (hot/total*100) : 0;
-  const leak    = (counts['Lost']||0) + (counts['Not Responding']||0);
-  const leakPct = total ? (leak/total*100) : 0;
-  const sourcesCount = new Set(rows.map(r=>mktGetSource(r))).size;
-
-  const headerBadge = document.getElementById('nd-header-badge');
-  if (headerBadge) headerBadge.textContent = `${total.toLocaleString()} leads · from 20 Aug 2026`;
-
-  // ── KPI STRIP ──
-  const kpiEl = document.getElementById('nd-kpis');
-  if (kpiEl) kpiEl.innerHTML = [
-    {tag:'New Digital Leads', val:total.toLocaleString(),  sub:'Since 20 Aug 2026',        col:'var(--blue)',   icon:'🆕'},
-    {tag:'Bookings',          val:books.toLocaleString(),  sub:conv.toFixed(1)+'% conversion', col:'#22c55e',   icon:'🛏'},
-    {tag:'Conversion %',      val:conv.toFixed(1)+'%',     sub:books+' bookings',          col:'var(--blue)',   icon:'📈'},
-    {tag:'Hot Leads',         val:hot.toLocaleString(),    sub:hotPct.toFixed(1)+'% of leads', col:'#ef4444',   icon:'🔥'},
-    {tag:'Leakage',           val:leak.toLocaleString(),   sub:leakPct.toFixed(1)+'% lost/no-response', col:'#f59e0b', icon:'⬇'},
-    {tag:'Active Sources',    val:sourcesCount.toLocaleString(), sub:'Distinct campaigns', col:'var(--purple)', icon:'🎯'},
-  ].map(k=>`<div class="kpi-card" style="border-left:3px solid ${k.col};background:var(--surface);border-top:none;border-right:1px solid var(--border);border-bottom:1px solid var(--border);border-radius:8px;">
-    <div class="kpi-tag">${k.icon} ${k.tag}</div>
-    <div class="kpi-number" style="color:${k.col};">${k.val}</div>
-    <div class="kpi-sub">${k.sub}</div>
-  </div>`).join('');
-
-  // ── SOURCE-WISE BREAKDOWN ──
-  const bySrc = {};
-  rows.forEach(r => {
-    const src = mktGetSource(r), st = mktGetStage(r);
-    if (!bySrc[src]) { bySrc[src] = {total:0}; MKT_STAGES.forEach(s=>bySrc[src][s]=0); }
-    bySrc[src].total++;
-    if (MKT_STAGES.includes(st)) bySrc[src][st]++;
-  });
-  const sortedSrc = Object.entries(bySrc).sort((a,b)=>b[1].total-a[1].total);
-  const grandSrc  = sortedSrc.reduce((s,[,v])=>s+v.total,0)||1;
-  const srcBadge  = document.getElementById('nd-source-badge');
-  if (srcBadge) srcBadge.textContent = `${sortedSrc.length} source${sortedSrc.length!==1?'s':''} · ${grandSrc===1&&sortedSrc.length===0?0:grandSrc} leads`;
-  const srcWrap = document.getElementById('nd-source-wrap');
-  if (srcWrap) {
-    if (sortedSrc.length === 0) {
-      srcWrap.innerHTML = `<div style="padding:24px;text-align:center;color:var(--muted);font-size:12px;">No Digital leads found with a User Registration Date on or after 20 Aug 2026 yet.</div>`;
-    } else {
-      srcWrap.innerHTML = `<table class="dt" style="min-width:1000px;">
-        <thead><tr>
-          <th style="min-width:30px;">#</th>
-          <th style="min-width:200px;">Source / Campaign</th>
-          ${MKT_STAGES.map(s=>`<th class="tr" style="font-size:9px;padding:6px 8px;white-space:nowrap;">${MKT_ICONS[s]||''} ${s.replace(' - Decision Pending','').replace('Payment - Non Mit','Pay-Non-MIT')}</th>`).join('')}
-          <th class="tr" style="background:var(--surface2);min-width:60px;">Total</th>
-          <th class="tr" style="min-width:65px;">Bookings</th>
-          <th style="min-width:90px;">Share</th>
-        </tr></thead>
-        <tbody>
-          ${sortedSrc.map(([src,v],i) => {
-            const bk    = mktBooks(v);
-            const share = (v.total/grandSrc*100).toFixed(1);
-            const barW  = Math.max(2, v.total/grandSrc*100);
-            return `<tr>
-              <td class="tm c-m" style="font-size:10px;">${i+1}</td>
-              <td class="fw6" style="max-width:220px;word-break:break-word;font-size:11px;">${src}</td>
-              ${MKT_STAGES.map(s=>{
-                const cnt = v[s]||0;
-                const col = MKT_COLORS[s]||'var(--muted)';
-                const isBk = ['Payment','Payment - Non Mit'].includes(s);
-                return `<td class="tm tr" style="color:${cnt>0?(isBk?'#22c55e':col):'var(--dim)'};font-weight:${cnt>0?700:400};font-size:${cnt>0?13:11}px;">${cnt>0?cnt:'—'}</td>`;
-              }).join('')}
-              <td class="tm tr" style="font-size:15px;font-weight:800;background:var(--surface2);">${v.total}</td>
-              <td class="tm tr" style="color:#22c55e;font-weight:800;font-size:14px;">${bk>0?bk:'—'}</td>
-              <td style="padding-right:12px;">
-                <div style="display:flex;align-items:center;gap:5px;">
-                  <div style="flex:1;height:5px;background:var(--bg);border-radius:3px;overflow:hidden;">
-                    <div style="width:${barW}%;height:100%;background:var(--blue);border-radius:3px;"></div>
-                  </div>
-                  <span style="font-family:var(--mono);font-size:10px;color:var(--muted);min-width:32px;">${share}%</span>
-                </div>
-              </td>
-            </tr>`;
-          }).join('')}
-        </tbody>
-      </table>`;
-    }
-  }
-
-  // ── STAGE-WISE BREAKDOWN ──
-  const stageBadge = document.getElementById('nd-stage-badge');
-  if (stageBadge) stageBadge.textContent = `${total.toLocaleString()} lead${total!==1?'s':''}`;
-  const stageWrap = document.getElementById('nd-stage-wrap');
-  if (stageWrap) {
-    stageWrap.innerHTML = `<table class="dt">
-      <thead><tr><th style="min-width:200px;">Lead Stage</th><th class="tr">Count</th><th class="tr">Share %</th></tr></thead>
-      <tbody>
-        ${MKT_STAGES.map(s=>{
-          const n   = counts[s]||0;
-          const pct = total ? (n/total*100).toFixed(1) : '0.0';
-          const isBk = ['Payment','Payment - Non Mit'].includes(s);
-          const col  = MKT_COLORS[s]||'var(--muted)';
-          return `<tr>
-            <td class="fw6">${MKT_ICONS[s]||''} ${s}</td>
-            <td class="tm tr" style="color:${n>0?(isBk?'#22c55e':col):'var(--dim)'};font-weight:${n>0?700:400};">${n>0?n:'—'}</td>
-            <td class="tm tr" style="color:var(--muted);">${pct}%</td>
-          </tr>`;
-        }).join('')}
-      </tbody>
-      <tfoot>
-        <tr style="background:linear-gradient(90deg,#1a1916,#0f172a);">
-          <td style="color:#fff;font-weight:800;padding:11px 14px;">Grand Total</td>
-          <td class="tm tr" style="color:#00ff88;font-size:15px;font-weight:900;">${total}</td>
-          <td class="tm tr" style="color:#fff;">100%</td>
-        </tr>
-      </tfoot>
-    </table>`;
-  }
-
-  // ── DAY-WISE TREND ──
-  const byDay = {};
-  rows.forEach(r => {
-    const raw = (r['User Registration Date'] || r['Date'] || '').trim();
-    const d   = parseAnyDate(raw);
-    const key = d ? `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}` : 'unknown';
-    if (!byDay[key]) byDay[key] = { date:d, rows:[] };
-    byDay[key].rows.push(r);
-  });
-  const dayKeys = Object.keys(byDay).sort();
-  const dailyBadge = document.getElementById('nd-daily-badge');
-  if (dailyBadge) dailyBadge.textContent = `${dayKeys.length} day${dayKeys.length!==1?'s':''}`;
-  const dailyWrap = document.getElementById('nd-daily-wrap');
-  if (dailyWrap) {
-    if (dayKeys.length === 0) {
-      dailyWrap.innerHTML = `<div style="padding:24px;text-align:center;color:var(--muted);font-size:12px;">No day-wise data available yet.</div>`;
-    } else {
-      dailyWrap.innerHTML = `<table class="dt">
-        <thead><tr><th style="min-width:100px;">Date</th><th class="tr">Leads</th><th class="tr">Bookings</th><th class="tr">Conv%</th><th class="tr">Hot Leads</th></tr></thead>
-        <tbody>
-          ${dayKeys.map(k => {
-            const bucket = byDay[k];
-            const c  = mktCounts(bucket.rows);
-            const bk = mktBooks(c);
-            const cv = bucket.rows.length ? (bk/bucket.rows.length*100).toFixed(1) : '0.0';
-            const label = bucket.date ? fmt(bucket.date) : 'Unknown';
-            return `<tr>
-              <td class="fw6">${label}</td>
-              <td class="tm tr">${bucket.rows.length}</td>
-              <td class="tm tr" style="color:#22c55e;font-weight:700;">${bk||'—'}</td>
-              <td class="tm tr" style="color:var(--blue);font-weight:700;">${cv}%</td>
-              <td class="tm tr" style="color:#ef4444;font-weight:700;">${c['Hot Lead']||'—'}</td>
-            </tr>`;
-          }).join('')}
-        </tbody>
-      </table>`;
-    }
-  }
-}
-
 function showTab(id,btn) {
   document.querySelectorAll('.tab-content').forEach(el=>el.classList.remove('active'));
   document.querySelectorAll('.nav-tab').forEach(el=>el.classList.remove('active'));
   document.getElementById('tab-'+id).classList.add('active');
   if(btn) btn.classList.add('active');
   window.scrollTo({top:48,behavior:'smooth'});
+
+  if (id === 'notmit') {
+    setTimeout(() => { nmRenderAll(); }, 50);
+    return;
+  }
 
   // Refresh date filter count badge for this tab when it becomes visible
   if (['overview','hot','warm','prospect','sla','lost','geo'].includes(id)) {
@@ -7276,12 +7164,6 @@ function showTab(id,btn) {
     gdfUpdateUI('agentperf', document.querySelector('#gdf-agentperf .gdf-pill.active'));
     const _m = globalMetrics || calculateMetrics(getFilteredRows());
     setTimeout(() => { renderAgentPerfTab(_m); }, 50);
-    return;
-  }
-
-  // ── NEW DIGITAL (SINCE 20 AUG 2026) ──
-  if (id === 'newdigital') {
-    setTimeout(() => { renderNewDigitalTab(); }, 50);
     return;
   }
 
@@ -7648,6 +7530,459 @@ function renderAgentPerfTab(m) {
       <td></td>
     </tr>`;
   })();
+}
+
+// ══════════════════════════════════════════════════════
+// NOT-MIT LEADS ANALYSIS TAB
+// Filters to an exact whitelist of Source/Campaign combos
+// (independent, offline/BTL/agent-sourced/organic leads —
+// i.e. everything that is NOT the MIT/WPU institutional feed)
+// ══════════════════════════════════════════════════════
+
+// Exact whitelist, as supplied by management. Matched against
+// the "Primary Registration Campaign" column, case-insensitive,
+// whitespace-normalized. ONLY these combinations appear in this tab.
+const NOTMIT_CAMPAIGNS_DISPLAY = [
+  'Aaalay Offline/na/na', 'Walkin/na/na', 'Walk-in Btl/na/na',
+  'Outbound Call/outbound Call/outbound Call', 'Walk-in/na/walk-in',
+  'Organic/google/na', 'Social/na/na', 'Facebook/leadad/meta Ads Curie',
+  'Facebook/leadad/aaalay Curie - All Student Sb Road', 'Facebook/leadad/bk',
+  'Direct/direct/direct', 'Whatsapp/api/reply', 'Facebook/leadad/aaalay_camikara',
+  'Ig/social/na', 'Poster/offline/na/na', 'Meta Ads/awareness_video/mit_awareness_stage Meta',
+  'Flyer/flyer/na', 'Social/instagram/na', 'Hoarding/hoarding/na', 'Adwords/adwords/adwords',
+  'Aaalay Offline/domestic/inbound', 'Google-blog/na/na', 'Social/facebook/na',
+  'Organic/bing/na', 'Aaalay Offline/domestic/na', 'Email/na/na', 'Referral/wl/na',
+  'Referral/google/na', 'Facebook/leadad/na', 'Aaalay Offline/enquire Now/pune',
+  'Referral/aaalay/na', 'Btl Activity/na/na',
+];
+function nmNormStr(s) { return (s||'').toLowerCase().trim().replace(/\s+/g,' '); }
+const NOTMIT_CAMPAIGNS = new Set(NOTMIT_CAMPAIGNS_DISPLAY.map(nmNormStr));
+// display label lookup (normalized -> nicely-cased original)
+const NOTMIT_DISPLAY_MAP = {};
+NOTMIT_CAMPAIGNS_DISPLAY.forEach(s => { NOTMIT_DISPLAY_MAP[nmNormStr(s)] = s; });
+
+const NM_FLOOR_DATE = new Date(2026, 7, 1, 0, 0, 0, 0); // 1 Aug 2026
+
+function nmGetCampaign(r) {
+  return nmNormStr(r['Primary Registration Campaign'] || '');
+}
+function nmIsNotMit(r) {
+  return NOTMIT_CAMPAIGNS.has(nmGetCampaign(r));
+}
+
+let nmState = { preset: 'all', from: null, to: null, agent: 'all', source: 'all' };
+
+// Base rows: Not-MIT whitelist + floor date (>= 1 Aug 2026)
+function nmBaseRows() {
+  return (rawRows || []).filter(r => {
+    if (!nmIsNotMit(r)) return false;
+    const d = parseRegDate(r['User Registration Date'] || '');
+    if (!d) return false;
+    return d >= NM_FLOOR_DATE;
+  });
+}
+
+// Apply date preset (on top of the Aug-2026 floor already in nmBaseRows), agent & source filters
+function nmGetRows() {
+  let rows = nmBaseRows();
+
+  // Date preset
+  const today = new Date(); today.setHours(0,0,0,0);
+  let from = null, to = null;
+  const p = nmState.preset;
+  if (p === 'today') { from = new Date(today); to = new Date(today); to.setHours(23,59,59,999); }
+  else if (p === 'yesterday') { from = new Date(today); from.setDate(from.getDate()-1); to = new Date(from); to.setHours(23,59,59,999); }
+  else if (p === '7') { from = new Date(today); from.setDate(from.getDate()-6); to = new Date(today); to.setHours(23,59,59,999); }
+  else if (p === '14') { from = new Date(today); from.setDate(from.getDate()-13); to = new Date(today); to.setHours(23,59,59,999); }
+  else if (p === '30') { from = new Date(today); from.setDate(from.getDate()-29); to = new Date(today); to.setHours(23,59,59,999); }
+  else if (p === 'thismonth') { from = new Date(today.getFullYear(), today.getMonth(), 1); to = new Date(today.getFullYear(), today.getMonth()+1, 0, 23,59,59,999); }
+  else if (p === 'lastmonth') { from = new Date(today.getFullYear(), today.getMonth()-1, 1); to = new Date(today.getFullYear(), today.getMonth(), 0, 23,59,59,999); }
+  else if (p === 'custom') {
+    if (nmState.from) { from = new Date(nmState.from); from.setHours(0,0,0,0); }
+    if (nmState.to)   { to   = new Date(nmState.to);   to.setHours(23,59,59,999); }
+  }
+  if (from || to) {
+    rows = rows.filter(r => {
+      const d = parseRegDate(r['User Registration Date'] || '');
+      if (!d) return false;
+      if (from && d < from) return false;
+      if (to   && d > to)   return false;
+      return true;
+    });
+  }
+
+  // Agent filter
+  if (nmState.agent !== 'all') {
+    rows = rows.filter(r => (ownerShort(r['Lead Owner']||'') || 'Unassigned') === nmState.agent);
+  }
+  // Source filter
+  if (nmState.source !== 'all') {
+    rows = rows.filter(r => nmGetCampaign(r) === nmState.source);
+  }
+  return rows;
+}
+
+function nmApplyPreset(preset, el) {
+  nmState.preset = preset;
+  if (preset === 'custom') {
+    nmState.from = document.getElementById('nm-from')?.value || null;
+    nmState.to   = document.getElementById('nm-to')?.value   || null;
+    document.querySelectorAll('#tab-notmit .gdf-pill').forEach(p => p.classList.remove('active'));
+  } else {
+    nmState.from = null; nmState.to = null;
+    const fi = document.getElementById('nm-from'), ti = document.getElementById('nm-to');
+    if (fi) fi.value=''; if (ti) ti.value='';
+    document.querySelectorAll('#tab-notmit .gdf-pill').forEach(p => p.classList.remove('active'));
+    if (el) el.classList.add('active');
+  }
+  nmRenderAll();
+}
+function nmSetAgent(v) { nmState.agent = v; nmRenderAll(); }
+function nmSetSource(v) { nmState.source = v; nmRenderAll(); }
+function nmResetFilters() {
+  nmState = { preset:'all', from:null, to:null, agent:'all', source:'all' };
+  document.querySelectorAll('#tab-notmit .gdf-pill').forEach(p => p.classList.remove('active'));
+  const allPill = document.querySelector('#tab-notmit .gdf-pill[data-preset="all"]');
+  if (allPill) allPill.classList.add('active');
+  const fi = document.getElementById('nm-from'), ti = document.getElementById('nm-to');
+  if (fi) fi.value=''; if (ti) ti.value='';
+  nmRenderAll();
+}
+
+function nmMonthKey(r) {
+  const d = parseRegDate(r['User Registration Date']||'');
+  if (!d) return null;
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+}
+function nmMonthLabel(key) {
+  const [y,mo] = key.split('-');
+  return `${MONTH_ORDER[+mo-1].slice(0,3)} ${y}`;
+}
+function nmAgentOf(r) { return ownerShort(r['Lead Owner']||'') || 'Unassigned'; }
+function nmIsBooking(r) {
+  const sub = (r['Lead Sub Stage']||'').trim();
+  return sub === 'Booking Done' || sub === 'Retention Done' || sub === 'Lateral Booking';
+}
+
+// ── Master render ──
+function nmRenderAll() {
+  if (!rawRows || rawRows.length === 0) return;
+  nmPopulateFilterOptions();
+  const rows = nmGetRows();
+  const m = calculateMetrics(rows);
+
+  const badge = document.getElementById('nm-count-badge');
+  if (badge) badge.textContent = `· ${rows.length.toLocaleString()} leads`;
+  const gc = document.getElementById('nm-gdf-count');
+  if (gc) gc.textContent = `${rows.length.toLocaleString()} of ${nmBaseRows().length.toLocaleString()} leads`;
+
+  nmRenderKpis(m, rows);
+  nmRenderQuality(m, rows);
+  nmRenderMonthOverall(rows);
+  const agentStats = nmRenderAgentPerf(rows);
+  nmRenderMonthMatrix(rows);
+  const complianceStats = nmRenderCompliance(rows);
+  nmRenderScorecard(agentStats, complianceStats);
+  nmRenderWarnings(agentStats, complianceStats);
+  nmRenderSourceTable(rows);
+}
+
+function nmPopulateFilterOptions() {
+  const base = nmBaseRows();
+  // Agents
+  const agSel = document.getElementById('nm-agent-select');
+  if (agSel) {
+    const counts = {};
+    base.forEach(r => { const a = nmAgentOf(r); counts[a] = (counts[a]||0)+1; });
+    const sorted = Object.entries(counts).sort((a,b)=>b[1]-a[1]);
+    const cur = nmState.agent;
+    agSel.innerHTML = `<option value="all">All Agents</option>` +
+      sorted.map(([a,n]) => `<option value="${a}" ${a===cur?'selected':''}>${a} (${n})</option>`).join('');
+  }
+  // Sources
+  const srcSel = document.getElementById('nm-source-select');
+  if (srcSel) {
+    const counts = {};
+    base.forEach(r => { const s = nmGetCampaign(r); counts[s] = (counts[s]||0)+1; });
+    const sorted = Object.entries(counts).sort((a,b)=>b[1]-a[1]);
+    const cur = nmState.source;
+    srcSel.innerHTML = `<option value="all">All Sources</option>` +
+      sorted.map(([s,n]) => `<option value="${s}" ${s===cur?'selected':''}>${NOTMIT_DISPLAY_MAP[s]||s} (${n})</option>`).join('');
+  }
+}
+
+function nmRenderKpis(m, rows) {
+  const el = document.getElementById('nm-kpis');
+  if (!el) return;
+  const total = rows.length;
+  const bookings = rows.filter(nmIsBooking).length;
+  const conv = total>0 ? (bookings/total*100).toFixed(1) : '0.0';
+  const leakage = m.lost.length + m.notResponding.length + m.cold.length;
+  const leakagePct = total>0 ? (leakage/total*100).toFixed(1) : '0.0';
+  const kpis = [
+    { tag:'Total Not-MIT Leads', val:total.toLocaleString(), sub:'Since Aug 2026 · whitelist sources', color:'blue' },
+    { tag:'Hot Leads',   val:m.hot.length,     sub:'Active, high-priority', color:'green' },
+    { tag:'Warm Leads',  val:m.warm.length,    sub:'Decision pending',       color:'amber' },
+    { tag:'Bookings',    val:bookings,         sub:'Booking/Retention/Lateral', color:'purple' },
+    { tag:'Conversion %',val:conv+'%',         sub:'Bookings ÷ total leads', color:parseFloat(conv)>=10?'green':parseFloat(conv)>=5?'amber':'red' },
+    { tag:'Cold Leads',  val:m.cold.length,    sub:'Needs re-engagement',    color:'blue' },
+    { tag:'Not Responding', val:m.notResponding.length, sub:'No contact yet', color:'amber' },
+    { tag:'Leakage %',   val:leakagePct+'%',   sub:`${leakage} cold+lost+NR`, color:parseFloat(leakagePct)>40?'red':parseFloat(leakagePct)>20?'amber':'green' },
+  ];
+  el.innerHTML = kpis.map(k => `
+    <div class="kpi-card ${k.color}">
+      <div class="kpi-tag">${k.tag}</div>
+      <div class="kpi-number">${k.val}</div>
+      <div class="kpi-sub">${k.sub}</div>
+    </div>`).join('');
+}
+
+function nmRenderQuality(m, rows) {
+  const tbody = document.getElementById('nm-quality');
+  if (!tbody) return;
+  const total = rows.length || 1;
+  const stages = [
+    { label:'🔥 Hot Lead', n:m.hot.length, cls:'c-g' },
+    { label:'🟡 Warm Lead - Decision Pending', n:m.warm.length, cls:'c-a' },
+    { label:'💳 Payment', n:m.payment.length, cls:'c-p' },
+    { label:'🧊 Cold Lead', n:m.cold.length, cls:'c-b' },
+    { label:'🔕 Not Responding', n:m.notResponding.length, cls:'c-m' },
+    { label:'❌ Lost', n:m.lost.length, cls:'c-r' },
+    { label:'⚪ Untouched', n:m.untouched.length, cls:'c-m' },
+    { label:'🔎 Prospect', n:m.prospect.length, cls:'c-p' },
+  ].filter(s => s.n > 0);
+  const badge = document.getElementById('nm-quality-badge');
+  if (badge) badge.textContent = `${rows.length.toLocaleString()} leads`;
+  tbody.innerHTML = stages.map(s => {
+    const pct = (s.n/total*100).toFixed(1);
+    return `<tr><td>${s.label}</td>
+      <td class="tr tm fw6">${s.n.toLocaleString()}</td>
+      <td style="width:220px;"><div class="mbw"><div class="mbt"><div class="mbf ${s.cls==='c-r'?'':''}" style="width:${pct}%;background:${{'c-g':'var(--green)','c-a':'var(--amber)','c-p':'var(--purple)','c-b':'var(--blue)','c-r':'var(--red)','c-m':'var(--muted)'}[s.cls]||'var(--blue)'};"></div></div><div class="mbv">${pct}%</div></div></td>
+    </tr>`;
+  }).join('') || '<tr><td style="padding:16px;color:var(--muted);">No leads in this range.</td></tr>';
+}
+
+function nmRenderMonthOverall(rows) {
+  const tbody = document.getElementById('nm-month-overall');
+  const badge = document.getElementById('nm-month-overall-badge');
+  if (!tbody) return;
+  const map = {};
+  rows.forEach(r => {
+    const k = nmMonthKey(r); if (!k) return;
+    if (!map[k]) map[k] = { total:0, hot:0, warm:0, payment:0, cold:0, nr:0, lost:0, booking:0 };
+    map[k].total++;
+    const stage = (r['Lead Stage']||'').trim();
+    if (stage==='Hot Lead') map[k].hot++;
+    else if (stage==='Warm Lead - Decision Pending') map[k].warm++;
+    else if (stage==='Payment') map[k].payment++;
+    else if (stage==='Cold Lead') map[k].cold++;
+    else if (stage==='Not Responding') map[k].nr++;
+    else if (stage==='Lost') map[k].lost++;
+    if (nmIsBooking(r)) map[k].booking++;
+  });
+  const keys = Object.keys(map).sort();
+  if (badge) badge.textContent = `${keys.length} month${keys.length===1?'':'s'}`;
+  const header = `<tr><th>Month</th><th class="tr">Total</th><th class="tr">Hot</th><th class="tr">Warm</th><th class="tr">Payment</th><th class="tr">Cold</th><th class="tr">Not Resp.</th><th class="tr">Lost</th><th class="tr">Bookings</th><th class="tr">Conv %</th></tr>`;
+  const bodyRows = keys.map(k => {
+    const d = map[k];
+    const conv = d.total>0 ? (d.booking/d.total*100).toFixed(1) : '0.0';
+    return `<tr><td class="fw6">${nmMonthLabel(k)}</td>
+      <td class="tr tm">${d.total}</td><td class="tr tm c-g">${d.hot}</td><td class="tr tm c-a">${d.warm}</td>
+      <td class="tr tm c-p">${d.payment}</td><td class="tr tm c-b">${d.cold}</td><td class="tr tm c-m">${d.nr}</td>
+      <td class="tr tm c-r">${d.lost}</td><td class="tr tm fw6">${d.booking}</td>
+      <td class="tr tm fw6" style="color:${parseFloat(conv)>=10?'var(--green)':parseFloat(conv)>=5?'var(--amber)':'var(--red)'};">${conv}%</td></tr>`;
+  }).join('');
+  const tGrand = Object.values(map).reduce((s,d)=>({total:s.total+d.total,hot:s.hot+d.hot,warm:s.warm+d.warm,payment:s.payment+d.payment,cold:s.cold+d.cold,nr:s.nr+d.nr,lost:s.lost+d.lost,booking:s.booking+d.booking}),{total:0,hot:0,warm:0,payment:0,cold:0,nr:0,lost:0,booking:0});
+  const tConv = tGrand.total>0 ? (tGrand.booking/tGrand.total*100).toFixed(1) : '0.0';
+  const footer = keys.length ? `<tr style="background:var(--surface2);border-top:2px solid var(--border2);">
+      <td class="fw6">GRAND TOTAL</td><td class="tr tm fw6">${tGrand.total}</td><td class="tr tm fw6 c-g">${tGrand.hot}</td>
+      <td class="tr tm fw6 c-a">${tGrand.warm}</td><td class="tr tm fw6 c-p">${tGrand.payment}</td><td class="tr tm fw6 c-b">${tGrand.cold}</td>
+      <td class="tr tm fw6 c-m">${tGrand.nr}</td><td class="tr tm fw6 c-r">${tGrand.lost}</td><td class="tr tm fw6">${tGrand.booking}</td>
+      <td class="tr tm fw6">${tConv}%</td></tr>` : '';
+  tbody.innerHTML = header + (bodyRows || `<tr><td colspan="10" style="padding:16px;color:var(--muted);">No leads in this range.</td></tr>`) + footer;
+}
+
+function nmRenderAgentPerf(rows) {
+  const tbody = document.getElementById('nm-agent-perf');
+  const badge = document.getElementById('nm-agentperf-badge');
+  const map = {};
+  rows.forEach(r => {
+    const ag = nmAgentOf(r);
+    if (!map[ag]) map[ag] = { agent:ag, total:0, hot:0, warm:0, payment:0, cold:0, nr:0, lost:0, untouched:0, booking:0 };
+    map[ag].total++;
+    const stage = (r['Lead Stage']||'').trim();
+    if (stage==='Hot Lead') map[ag].hot++;
+    else if (stage==='Warm Lead - Decision Pending') map[ag].warm++;
+    else if (stage==='Payment') map[ag].payment++;
+    else if (stage==='Cold Lead') map[ag].cold++;
+    else if (stage==='Not Responding') map[ag].nr++;
+    else if (stage==='Lost') map[ag].lost++;
+    else if (stage==='Untouched') map[ag].untouched++;
+    if (nmIsBooking(r)) map[ag].booking++;
+  });
+  const agents = Object.values(map).map(a => ({...a, conv: a.total>0?(a.booking/a.total*100):0, leakage: a.cold+a.nr+a.lost})).sort((a,b)=>b.total-a.total);
+  if (badge) badge.textContent = `${agents.length} agent${agents.length===1?'':'s'}`;
+  if (!tbody) return agents;
+  const header = `<tr><th>Agent</th><th class="tr">Total</th><th class="tr">Hot</th><th class="tr">Warm</th><th class="tr">Payment</th><th class="tr">Cold</th><th class="tr">Not Resp.</th><th class="tr">Lost</th><th class="tr">Untouched</th><th class="tr">Bookings</th><th class="tr">Conv %</th></tr>`;
+  const bodyRows = agents.map(a => `<tr><td class="fw6">${a.agent}</td>
+      <td class="tr tm">${a.total}</td><td class="tr tm c-g">${a.hot}</td><td class="tr tm c-a">${a.warm}</td>
+      <td class="tr tm c-p">${a.payment}</td><td class="tr tm c-b">${a.cold}</td><td class="tr tm c-m">${a.nr}</td>
+      <td class="tr tm c-r">${a.lost}</td><td class="tr tm c-m">${a.untouched}</td><td class="tr tm fw6">${a.booking}</td>
+      <td class="tr tm fw6" style="color:${a.conv>=10?'var(--green)':a.conv>=5?'var(--amber)':'var(--red)'};">${a.conv.toFixed(1)}%</td></tr>`).join('');
+  tbody.innerHTML = header + (bodyRows || `<tr><td colspan="11" style="padding:16px;color:var(--muted);">No leads in this range.</td></tr>`);
+  return agents;
+}
+
+function nmRenderMonthMatrix(rows) {
+  const tbody = document.getElementById('nm-month-matrix');
+  const badge = document.getElementById('nm-month-matrix-badge');
+  if (!tbody) return;
+  const months = [...new Set(rows.map(nmMonthKey).filter(Boolean))].sort();
+  const agentMap = {};
+  rows.forEach(r => {
+    const ag = nmAgentOf(r), k = nmMonthKey(r); if (!k) return;
+    if (!agentMap[ag]) agentMap[ag] = {};
+    agentMap[ag][k] = (agentMap[ag][k]||0)+1;
+  });
+  const agents = Object.keys(agentMap).sort((a,b) => {
+    const ta = Object.values(agentMap[a]).reduce((s,n)=>s+n,0);
+    const tb = Object.values(agentMap[b]).reduce((s,n)=>s+n,0);
+    return tb-ta;
+  });
+  if (badge) badge.textContent = `${agents.length} agents × ${months.length} months`;
+  if (!months.length || !agents.length) {
+    tbody.innerHTML = `<tr><td style="padding:16px;color:var(--muted);">No leads in this range.</td></tr>`;
+    return;
+  }
+  const header = `<tr><th>Agent</th>${months.map(m=>`<th class="tr">${nmMonthLabel(m)}</th>`).join('')}<th class="tr">Total</th></tr>`;
+  const bodyRows = agents.map(ag => {
+    const rowTotal = months.reduce((s,m)=>s+(agentMap[ag][m]||0),0);
+    return `<tr><td class="fw6">${ag}</td>${months.map(m=>`<td class="tr tm">${agentMap[ag][m]||0}</td>`).join('')}<td class="tr tm fw6">${rowTotal}</td></tr>`;
+  }).join('');
+  const colTotals = months.map(m => agents.reduce((s,ag)=>s+(agentMap[ag][m]||0),0));
+  const grand = colTotals.reduce((s,n)=>s+n,0);
+  const footer = `<tr style="background:var(--surface2);border-top:2px solid var(--border2);"><td class="fw6">GRAND TOTAL</td>${colTotals.map(n=>`<td class="tr tm fw6">${n}</td>`).join('')}<td class="tr tm fw6">${grand}</td></tr>`;
+  tbody.innerHTML = header + bodyRows + footer;
+}
+
+function nmRenderCompliance(rows) {
+  const tbody = document.getElementById('nm-compliance');
+  const badge = document.getElementById('nm-compliance-badge');
+  const map = {};
+  rows.forEach(r => {
+    const ag = nmAgentOf(r);
+    if (!map[ag]) map[ag] = { agent:ag, total:0, compliant:0, overdue:0, approaching:0, ageSum:0 };
+    const comp = computeLeadCompliance(r);
+    map[ag].total++;
+    map[ag].ageSum += comp.age || 0;
+    if (comp.compliant) map[ag].compliant++;
+    if (comp.overdue) map[ag].overdue++;
+    if (comp.approaching) map[ag].approaching++;
+  });
+  const agents = Object.values(map).map(a => ({...a, pct: a.total>0 ? Math.round(a.compliant/a.total*100) : 0, avgAge: a.total>0 ? (a.ageSum/a.total).toFixed(1) : '0.0'})).sort((a,b)=>a.pct-b.pct);
+  const totalOverdue = agents.reduce((s,a)=>s+a.overdue,0);
+  if (badge) badge.textContent = `${totalOverdue} overdue leads`;
+  if (!tbody) return agents;
+  const rowsHtml = agents.map(a => {
+    const color = a.pct>=75?'var(--green)':a.pct>=50?'var(--amber)':'var(--red)';
+    const rowBg = a.pct<50 ? 'overdue-row' : '';
+    return `<tr class="${rowBg}"><td class="fw6">${a.agent}</td>
+      <td class="tr tm">${a.total}</td><td class="tr tm c-g">${a.compliant}</td>
+      <td class="tr tm c-r fw6">${a.overdue}</td><td class="tr tm c-a">${a.approaching}</td>
+      <td class="tr tm">${a.avgAge}</td>
+      <td><div class="mbw"><div class="mbt"><div class="mbf" style="width:${a.pct}%;background:${color};"></div></div><div class="mbv" style="color:${color};">${a.pct}%</div></div></td></tr>`;
+  }).join('');
+  tbody.innerHTML = rowsHtml || `<tr><td colspan="7" style="padding:16px;color:var(--muted);">No leads in this range.</td></tr>`;
+  return agents;
+}
+
+function nmRenderScorecard(agentStats, complianceStats) {
+  const tbody = document.getElementById('nm-scorecard');
+  const badge = document.getElementById('nm-scorecard-badge');
+  if (!tbody) return;
+  const compMap = {};
+  (complianceStats||[]).forEach(c => compMap[c.agent] = c);
+  const scored = (agentStats||[]).filter(a=>a.total>0).map(a => {
+    const comp = compMap[a.agent] || { pct:0 };
+    const leakagePct = a.total>0 ? (a.leakage/a.total*100) : 0;
+    const score = (a.conv*0.4) + (comp.pct*0.4) - (leakagePct*0.2);
+    let rating, cls;
+    if (score >= 25) { rating='Excellent'; cls='rating-excellent'; }
+    else if (score >= 12) { rating='Acceptable'; cls='rating-acceptable'; }
+    else if (score >= 0) { rating='At Risk'; cls='rating-risk'; }
+    else { rating='Critical'; cls='rating-critical'; }
+    return { agent:a.agent, conv:a.conv, compliance:comp.pct||0, leakagePct, score, rating, cls };
+  }).sort((a,b)=>b.score-a.score);
+  if (badge) badge.textContent = `${scored.filter(s=>s.rating==='Excellent').length} excellent · ${scored.filter(s=>s.rating==='Critical'||s.rating==='At Risk').length} need help`;
+  tbody.innerHTML = scored.map(s => `<tr><td class="fw6">${s.agent}</td>
+      <td class="tr tm" style="color:${s.conv>=10?'var(--green)':s.conv>=5?'var(--amber)':'var(--red)'};">${s.conv.toFixed(1)}%</td>
+      <td class="tr tm" style="color:${s.compliance>=75?'var(--green)':s.compliance>=50?'var(--amber)':'var(--red)'};">${s.compliance}%</td>
+      <td class="tr tm" style="color:${s.leakagePct>40?'var(--red)':s.leakagePct>20?'var(--amber)':'var(--green)'};">${s.leakagePct.toFixed(1)}%</td>
+      <td><span class="fu-status ${s.cls}">${s.rating}</span></td></tr>`).join('')
+    || `<tr><td colspan="5" style="padding:16px;color:var(--muted);">No leads in this range.</td></tr>`;
+  return scored;
+}
+
+function nmRenderWarnings(agentStats, complianceStats) {
+  const el = document.getElementById('nm-warnings');
+  const badge = document.getElementById('nm-warning-badge');
+  if (!el) return;
+  const compMap = {};
+  (complianceStats||[]).forEach(c => compMap[c.agent] = c);
+  const flagged = [];
+  (agentStats||[]).filter(a=>a.total>0).forEach(a => {
+    const comp = compMap[a.agent] || { pct:0, overdue:0, total:a.total };
+    const leakagePct = a.total>0 ? (a.leakage/a.total*100) : 0;
+    const issues = [];
+    if (comp.pct < 50) issues.push(`Follow-up compliance is only <strong>${comp.pct}%</strong> — enforce daily call-log discipline and clear the <strong>${comp.overdue}</strong> SLA-overdue lead${comp.overdue===1?'':'s'} within 24 hours.`);
+    if (a.total >= 8 && a.conv < 5) issues.push(`Conversion is only <strong>${a.conv.toFixed(1)}%</strong> on ${a.total} leads — pair with a top performer for shadow calls and refresh the objection-handling script.`);
+    if (leakagePct > 45) issues.push(`Leakage (cold + not-responding + lost) is <strong>${leakagePct.toFixed(1)}%</strong> — leads are going cold before a real conversation; tighten first-contact speed (call within 4 hours of assignment).`);
+    if (a.untouched > 0) issues.push(`<strong>${a.untouched}</strong> lead${a.untouched===1?' is':'s are'} still Untouched — assign an immediate call sweep.`);
+    if (issues.length) flagged.push({ agent:a.agent, issues, total:a.total });
+  });
+  flagged.sort((x,y)=>y.issues.length-x.issues.length);
+  if (badge) badge.textContent = `${flagged.length} flagged`;
+  if (!flagged.length) {
+    el.innerHTML = `<div style="padding:14px 16px;color:var(--muted);font-size:12px;">✅ No agents currently breach the warning thresholds for this selection.</div>`;
+    return;
+  }
+  el.innerHTML = flagged.map(f => `
+    <div style="padding:12px 16px;border-bottom:1px solid var(--border);">
+      <div style="font-size:12px;font-weight:700;margin-bottom:6px;color:var(--red);">⚠️ ${f.agent} <span style="color:var(--muted);font-weight:400;font-family:var(--mono);font-size:10px;">(${f.total} Not-MIT leads)</span></div>
+      <ul style="margin:0;padding-left:18px;font-size:11.5px;color:var(--muted);line-height:1.8;">
+        ${f.issues.map(i=>`<li>${i}</li>`).join('')}
+      </ul>
+    </div>`).join('');
+}
+
+function nmRenderSourceTable(rows) {
+  const tbody = document.getElementById('nm-source-table');
+  const badge = document.getElementById('nm-source-badge');
+  if (!tbody) return;
+  const map = {};
+  rows.forEach(r => {
+    const s = nmGetCampaign(r);
+    if (!map[s]) map[s] = { total:0, hot:0, warm:0, booking:0, cold:0, lost:0 };
+    map[s].total++;
+    const stage = (r['Lead Stage']||'').trim();
+    if (stage==='Hot Lead') map[s].hot++;
+    else if (stage==='Warm Lead - Decision Pending') map[s].warm++;
+    else if (stage==='Cold Lead') map[s].cold++;
+    else if (stage==='Lost') map[s].lost++;
+    if (nmIsBooking(r)) map[s].booking++;
+  });
+  const total = rows.length || 1;
+  const sorted = Object.entries(map).sort((a,b)=>b[1].total-a[1].total);
+  if (badge) badge.textContent = `${sorted.length} of ${NOTMIT_CAMPAIGNS_DISPLAY.length} sources active`;
+  tbody.innerHTML = sorted.map(([s,d]) => {
+    const pct = (d.total/total*100).toFixed(1);
+    const conv = d.total>0 ? (d.booking/d.total*100).toFixed(1) : '0.0';
+    return `<tr><td>${NOTMIT_DISPLAY_MAP[s]||s}</td>
+      <td class="tr tm fw6">${d.total}</td><td class="tr tm">${pct}%</td>
+      <td class="tr tm c-g">${d.hot}</td><td class="tr tm c-a">${d.warm}</td>
+      <td class="tr tm fw6">${d.booking}</td><td class="tr tm c-b">${d.cold}</td><td class="tr tm c-r">${d.lost}</td>
+      <td class="tr tm fw6" style="color:${parseFloat(conv)>=10?'var(--green)':parseFloat(conv)>=5?'var(--amber)':'var(--red)'};">${conv}%</td></tr>`;
+  }).join('') || `<tr><td colspan="9" style="padding:16px;color:var(--muted);">No leads in this range.</td></tr>`;
 }
 
 </script>
