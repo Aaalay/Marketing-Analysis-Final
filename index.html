@@ -6728,15 +6728,15 @@ function gdfApplyMarketing(preset, el) {
 // AGENT-WISE PERFORMANCE — Month × Lead Stage (count + %)
 // Mirrors "MIT WPU All Leads share - Month wise - Agents Wise"
 // ══════════════════════════════════════════════════════
-const MKT_AGENT_STAGES = ['Cold Lead','Hot Lead','Lost','Not Responding','Payment','Prospect','Support','Untouched','Warm Lead - Decision Pending'];
+const MKT_AGENT_STAGES = ['Cold Lead','Hot Lead','Lost','Not Responding','Payment','Payment - Non Mit','Prospect','Support','Untouched','Warm Lead - Decision Pending'];
 const MKT_AGENT_STAGE_LABELS = {
   'Cold Lead':'Cold Lead','Hot Lead':'Hot Lead','Lost':'Lost',
-  'Not Responding':'Not Responding','Payment':'Payment','Prospect':'Prospect',
+  'Not Responding':'Not Responding','Payment':'Payment','Payment - Non Mit':'Payment - Non Mit','Prospect':'Prospect',
   'Support':'Support','Untouched':'Untouched','Warm Lead - Decision Pending':'Warm Lead - Decision Pending'
 };
 const MKT_AGENT_STAGE_COLORS = {
   'Cold Lead':'#3b82f6','Hot Lead':'#ef4444','Lost':'#e05252','Not Responding':'#6b7280',
-  'Payment':'#22c55e','Prospect':'#8b5cf6','Support':'#0ea5e9','Untouched':'#9ca3af',
+  'Payment':'#22c55e','Payment - Non Mit':'#16a34a','Prospect':'#8b5cf6','Support':'#0ea5e9','Untouched':'#9ca3af',
   'Warm Lead - Decision Pending':'#f59e0b'
 };
 
@@ -6759,8 +6759,10 @@ function renderMktAgentWise(rows) {
   rows.forEach(r => {
     const month = mktGetMonth(r);
     const agent = mktAgentName(r);
-    const stage = mktGetStage(r);
-    if (!MKT_AGENT_STAGES.includes(stage)) return;
+    // Match stage case/space-insensitively (e.g. "Payment - Non MIT" → "Payment - Non Mit")
+    const stRaw = mktGetStage(r).toLowerCase().replace(/\s+/g,' ');
+    const stage = MKT_AGENT_STAGES.find(s => s.toLowerCase() === stRaw);
+    if (!stage) return;
     monthsSet.add(month);
     if (!data[month]) data[month] = {};
     if (!data[month][agent]) { data[month][agent] = {}; MKT_AGENT_STAGES.forEach(s=>data[month][agent][s]=0); }
