@@ -6134,15 +6134,35 @@ const MKT_BTL_SET = new Set([
 const MKT_DIG_KW = ['meta','facebook','fb','ig/','instagram','google','organic','direct/direct','curie-meta','plato-meta','mit-meta','awareness','consideration'];
 const MKT_BTL_KW = ['kiosk','poster','standee','standeescan','hoarding'];
 // Normalise campaign text: lowercase, trim, NBSP → space, collapse repeated spaces
-function mktNorm(s) { return (s||'').replace(/\u00a0/g,' ').toLowerCase().trim().replace(/\s+/g,' '); }
+// Campaign-name prefixes that are always Digital (per management request)
+const MKT_DIG_CAMP_PREFIX = ['facebook/leadad/','meta ads','google ads'];
+// Normalise campaign text: remove hidden/zero-width chars & BOM, NBSP → space,
+// lowercase, collapse repeated spaces, remove spaces around '/'
+function mktNorm(s) {
+  return String(s||'')
+    .replace(/[\u200B-\u200D\uFEFF\u2060\u0000-\u001F]/g,'')
+    .replace(/\u00a0/g,' ')
+    .toLowerCase().trim()
+    .replace(/\s+/g,' ')
+    .replace(/\s*\/\s*/g,'/');
+}
+// Read the campaign column even if the CSV header has a BOM / odd spacing / different case
+function mktCampRaw(r) {
+  if (!r) return '';
+  if (r['Primary Registration Campaign'] != null) return r['Primary Registration Campaign'];
+  const k = Object.keys(r).find(k => mktNorm(k) === 'primary registration campaign');
+  return k ? r[k] : '';
+}
 const MKT_DIGITAL_NORM = new Set([...MKT_DIGITAL_SET].map(mktNorm));
 const MKT_BTL_NORM     = new Set([...MKT_BTL_SET].map(mktNorm));
 
 function mktGroup(r) {
-  const camp = mktNorm(r['Primary Registration Campaign']);
+  const camp = mktNorm(mktCampRaw(r));
   if (camp) {
     if (MKT_DIGITAL_NORM.has(camp)) return 'digital';
     if (MKT_BTL_NORM.has(camp))     return 'btl';
+    // Auto rule: every campaign starting with facebook/leadad/, meta ads or google ads → Digital
+    if (MKT_DIG_CAMP_PREFIX.some(pf => camp.startsWith(pf))) return 'digital';
     // Explicit other campaigns stay as other
     const src2 = ((r['Source (Meta/Google/Walk-in/Agent)']||r['Primary Traffic Channel']||'')).toLowerCase().trim();
     for (const kw of MKT_BTL_KW) { if (src2.includes(kw)) return 'btl'; }
@@ -6163,7 +6183,7 @@ function mktProperty(r) {
 }
 
 function mktGetSource(r) {
-  return (r['Primary Registration Campaign']||r['Source (Meta/Google/Walk-in/Agent)']||r['Primary Traffic Channel']||'(Not Set)').trim();
+  return (mktCampRaw(r)||r['Source (Meta/Google/Walk-in/Agent)']||r['Primary Traffic Channel']||'(Not Set)').trim();
 }
 function mktGetStage(r) {
   return (r['Lead Stage']||r['Lead Quality ']||r['Lead Quality']||'').trim();
@@ -7577,10 +7597,11 @@ const NOTMIT_CAMPAIGNS_DISPLAY = [
   'Organic/bing/na', 'Aaalay Offline/domestic/na', 'Email/na/na', 'Referral/wl/na',
   'Referral/google/na', 'Facebook/leadad/na', 'Aaalay Offline/enquire Now/pune',
   'Referral/aaalay/na', 'Btl Activity/na/na',
-  // ── Added per management request ──
+  // ── Added per management request (Digital campaigns tracked in Non-MIT) ──
   'Facebook/leadad/ambegaon',
+  'Meta Ads/awareness_video/mit_awareness_stage',
 ];
-function nmNormStr(s) { return (s||'').replace(/\u00a0/g,' ').toLowerCase().trim().replace(/\s+/g,' '); }
+function nmNormStr(s) { return mktNorm(s); }
 const NOTMIT_CAMPAIGNS = new Set(NOTMIT_CAMPAIGNS_DISPLAY.map(nmNormStr));
 const NOTMIT_CAMPAIGN_COUNT = NOTMIT_CAMPAIGNS.size;
 // display label lookup (normalized -> nicely-cased original)
@@ -7590,7 +7611,7 @@ NOTMIT_CAMPAIGNS_DISPLAY.forEach(s => { NOTMIT_DISPLAY_MAP[nmNormStr(s)] = s; })
 const NM_FLOOR_DATE = new Date(2026, 7, 1, 0, 0, 0, 0); // 1 Aug 2026
 
 function nmGetCampaign(r) {
-  return nmNormStr(r['Primary Registration Campaign'] || '');
+  return nmNormStr(mktCampRaw(r));
 }
 function nmIsNotMit(r) {
   return NOTMIT_CAMPAIGNS.has(nmGetCampaign(r));
