@@ -6133,8 +6133,6 @@ const MKT_BTL_SET = new Set([
 // CRM source-field fallback keywords
 const MKT_DIG_KW = ['meta','facebook','fb','ig/','instagram','google','organic','direct/direct','curie-meta','plato-meta','mit-meta','awareness','consideration'];
 const MKT_BTL_KW = ['kiosk','poster','standee','standeescan','hoarding'];
-// Campaign-name prefixes that are always paid Digital (catches future FB lead-ad / Meta / Google Ads campaigns)
-const MKT_DIG_CAMP_PREFIX = ['facebook/leadad/','meta ads/','meta ads ','google ads ','google/google_ads'];
 // Normalise campaign text: lowercase, trim, NBSP → space, collapse repeated spaces
 function mktNorm(s) { return (s||'').replace(/\u00a0/g,' ').toLowerCase().trim().replace(/\s+/g,' '); }
 const MKT_DIGITAL_NORM = new Set([...MKT_DIGITAL_SET].map(mktNorm));
@@ -6145,7 +6143,6 @@ function mktGroup(r) {
   if (camp) {
     if (MKT_DIGITAL_NORM.has(camp)) return 'digital';
     if (MKT_BTL_NORM.has(camp))     return 'btl';
-    if (MKT_DIG_CAMP_PREFIX.some(pf => camp.startsWith(pf))) return 'digital';
     // Explicit other campaigns stay as other
     const src2 = ((r['Source (Meta/Google/Walk-in/Agent)']||r['Primary Traffic Channel']||'')).toLowerCase().trim();
     for (const kw of MKT_BTL_KW) { if (src2.includes(kw)) return 'btl'; }
@@ -6480,13 +6477,14 @@ function renderMktSource(rows) {
 
   const bySrc = {};
   rows.forEach(r => {
-    const src=mktGetSource(r), st=mktGetStage(r), grp=mktGroup(r);
-    if (!bySrc[src]) { bySrc[src]={total:0,group:grp}; MKT_STAGES.forEach(s=>bySrc[src][s]=0); }
-    bySrc[src].total++;
-    if (MKT_STAGES.includes(st)) bySrc[src][st]++;
+    const raw=mktGetSource(r).replace(/\u00a0/g,' ').replace(/\s+/g,' ').trim(), key=raw.toLowerCase();
+    const st=mktGetStage(r), grp=mktGroup(r);
+    if (!bySrc[key]) { bySrc[key]={total:0,group:grp,label:raw}; MKT_STAGES.forEach(s=>bySrc[key][s]=0); }
+    bySrc[key].total++;
+    if (MKT_STAGES.includes(st)) bySrc[key][st]++;
   });
 
-  const sorted = Object.entries(bySrc).sort((a,b)=>b[1].total-a[1].total);
+  const sorted = Object.entries(bySrc).map(([k,v])=>[v.label,v]).sort((a,b)=>b[1].total-a[1].total);
   const grand  = sorted.reduce((s,[,v])=>s+v.total,0)||1;
   if (badge) badge.textContent = `${sorted.length} sources · ${grand} leads`;
 
