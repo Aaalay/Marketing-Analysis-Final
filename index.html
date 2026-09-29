@@ -646,6 +646,13 @@ button{font-family:var(--body);cursor:pointer;}
         <select id="nm-source-select" class="gdf-input" style="min-width:180px;" onchange="nmSetSource(this.value)">
           <option value="all">All Sources</option>
         </select>
+        <span class="gdf-label">Channel:</span>
+        <select id="nm-channel-select" class="gdf-input" style="min-width:130px;" onchange="nmSetChannel(this.value)">
+          <option value="all">All Channels</option>
+          <option value="digital">📱 Digital</option>
+          <option value="btl">📣 BTL</option>
+          <option value="other">📦 Offline / Other</option>
+        </select>
         <button class="gdf-clear" onclick="nmResetFilters()">✕ Reset</button>
         <span class="gdf-count" id="nm-gdf-count"></span>
       </div>
@@ -722,13 +729,22 @@ button{font-family:var(--body);cursor:pointer;}
         <div class="panel-body" id="nm-warnings"></div>
       </div>
 
+      <!-- CHANNEL MIX -->
+      <div class="panel">
+        <div class="panel-header">
+          <div><div class="panel-title">📡 Channel Mix — Digital vs BTL vs Offline/Other</div><div class="panel-sub">Non-MIT leads grouped by channel (same classification as the Marketing tab) — quickly see which channel brings volume and which converts.</div></div>
+          <span class="panel-badge badge-gray" id="nm-channel-badge">—</span>
+        </div>
+        <div class="panel-body" style="padding:0;overflow-x:auto;"><table class="dt"><thead><tr><th>Channel</th><th class="tr">Sources</th><th class="tr">Leads</th><th class="tr">% Share</th><th class="tr">Hot</th><th class="tr">Warm</th><th class="tr">Booking/Payment</th><th class="tr">Cold</th><th class="tr">Lost</th><th class="tr">Not Responding</th><th class="tr">Conv %</th></tr></thead><tbody id="nm-channel-table"></tbody></table></div>
+      </div>
+
       <!-- SOURCE / CAMPAIGN TABLE -->
       <div class="panel">
         <div class="panel-header">
           <div><div class="panel-title">🎯 Source / Campaign — Full Breakdown</div><div class="panel-sub">Every Non-MIT source/campaign combination — lead count, stage split &amp; conversion. Helps management decide where to focus offline/BTL/agent-sourced spend.</div></div>
           <span class="panel-badge badge-gray" id="nm-source-badge">—</span>
         </div>
-        <div class="panel-body" style="padding:0;overflow-x:auto;"><table class="dt"><thead><tr><th>Source / Campaign</th><th class="tr">Leads</th><th class="tr">% Share</th><th class="tr">Hot</th><th class="tr">Warm</th><th class="tr">Booking/Payment (Payment - Non Mit)</th><th class="tr">Cold</th><th class="tr">Lost</th><th class="tr">Conv %</th></tr></thead><tbody id="nm-source-table"></tbody></table></div>
+        <div class="panel-body" style="padding:0;overflow-x:auto;"><table class="dt"><thead><tr><th>Source / Campaign</th><th>Channel</th><th class="tr">Leads</th><th class="tr">% Share</th><th class="tr">Hot</th><th class="tr">Warm</th><th class="tr">Booking/Payment (Payment - Non Mit)</th><th class="tr">Cold</th><th class="tr">Lost</th><th class="tr">Conv %</th></tr></thead><tbody id="nm-source-table"></tbody></table></div>
       </div>
     </div>
 
@@ -6104,6 +6120,8 @@ const MKT_DIGITAL_SET = new Set([
   'facebook/leadad/mit-wpu conversion stage','email',
   'adwords/adwords/adwords','social/facebook/na','facebook/leadad/na',
   'facebook/leadad/sb road july students leads','google-blog/na/na','social/non-hosteller/na',
+  // ── Moved from Other → Digital (per management request) ──
+  'facebook/leadad/ambegaon','facebook/leadad/aaalay_camikara','facebook/leadad/bk',
 ]);
 const MKT_BTL_SET = new Set([
   'kiosk/kiosk/na','poster/offline/na/na','standeescan/standee/standee',
@@ -6115,12 +6133,19 @@ const MKT_BTL_SET = new Set([
 // CRM source-field fallback keywords
 const MKT_DIG_KW = ['meta','facebook','fb','ig/','instagram','google','organic','direct/direct','curie-meta','plato-meta','mit-meta','awareness','consideration'];
 const MKT_BTL_KW = ['kiosk','poster','standee','standeescan','hoarding'];
+// Campaign-name prefixes that are always paid Digital (catches future FB lead-ad / Meta / Google Ads campaigns)
+const MKT_DIG_CAMP_PREFIX = ['facebook/leadad/','meta ads/','meta ads ','google ads ','google/google_ads'];
+// Normalise campaign text: lowercase, trim, NBSP → space, collapse repeated spaces
+function mktNorm(s) { return (s||'').replace(/\u00a0/g,' ').toLowerCase().trim().replace(/\s+/g,' '); }
+const MKT_DIGITAL_NORM = new Set([...MKT_DIGITAL_SET].map(mktNorm));
+const MKT_BTL_NORM     = new Set([...MKT_BTL_SET].map(mktNorm));
 
 function mktGroup(r) {
-  const camp = ((r['Primary Registration Campaign']||'')).toLowerCase().trim();
+  const camp = mktNorm(r['Primary Registration Campaign']);
   if (camp) {
-    if (MKT_DIGITAL_SET.has(camp)) return 'digital';
-    if (MKT_BTL_SET.has(camp))     return 'btl';
+    if (MKT_DIGITAL_NORM.has(camp)) return 'digital';
+    if (MKT_BTL_NORM.has(camp))     return 'btl';
+    if (MKT_DIG_CAMP_PREFIX.some(pf => camp.startsWith(pf))) return 'digital';
     // Explicit other campaigns stay as other
     const src2 = ((r['Source (Meta/Google/Walk-in/Agent)']||r['Primary Traffic Channel']||'')).toLowerCase().trim();
     for (const kw of MKT_BTL_KW) { if (src2.includes(kw)) return 'btl'; }
@@ -7554,9 +7579,12 @@ const NOTMIT_CAMPAIGNS_DISPLAY = [
   'Organic/bing/na', 'Aaalay Offline/domestic/na', 'Email/na/na', 'Referral/wl/na',
   'Referral/google/na', 'Facebook/leadad/na', 'Aaalay Offline/enquire Now/pune',
   'Referral/aaalay/na', 'Btl Activity/na/na',
+  // ── Added per management request ──
+  'Facebook/leadad/ambegaon',
 ];
-function nmNormStr(s) { return (s||'').toLowerCase().trim().replace(/\s+/g,' '); }
+function nmNormStr(s) { return (s||'').replace(/\u00a0/g,' ').toLowerCase().trim().replace(/\s+/g,' '); }
 const NOTMIT_CAMPAIGNS = new Set(NOTMIT_CAMPAIGNS_DISPLAY.map(nmNormStr));
+const NOTMIT_CAMPAIGN_COUNT = NOTMIT_CAMPAIGNS.size;
 // display label lookup (normalized -> nicely-cased original)
 const NOTMIT_DISPLAY_MAP = {};
 NOTMIT_CAMPAIGNS_DISPLAY.forEach(s => { NOTMIT_DISPLAY_MAP[nmNormStr(s)] = s; });
@@ -7570,7 +7598,7 @@ function nmIsNotMit(r) {
   return NOTMIT_CAMPAIGNS.has(nmGetCampaign(r));
 }
 
-let nmState = { preset: 'all', from: null, to: null, agent: 'all', source: 'all' };
+let nmState = { preset: 'all', from: null, to: null, agent: 'all', source: 'all', channel: 'all' };
 
 // Base rows: Non-MIT whitelist + floor date (>= 1 Aug 2026)
 function nmBaseRows() {
@@ -7619,6 +7647,10 @@ function nmGetRows() {
   if (nmState.source !== 'all') {
     rows = rows.filter(r => nmGetCampaign(r) === nmState.source);
   }
+  // Channel filter (Digital / BTL / Other — uses Marketing-tab classification)
+  if (nmState.channel && nmState.channel !== 'all') {
+    rows = rows.filter(r => mktGroup(r) === nmState.channel);
+  }
   return rows;
 }
 
@@ -7639,8 +7671,10 @@ function nmApplyPreset(preset, el) {
 }
 function nmSetAgent(v) { nmState.agent = v; nmRenderAll(); }
 function nmSetSource(v) { nmState.source = v; nmRenderAll(); }
+function nmSetChannel(v) { nmState.channel = v; nmRenderAll(); }
 function nmResetFilters() {
-  nmState = { preset:'all', from:null, to:null, agent:'all', source:'all' };
+  nmState = { preset:'all', from:null, to:null, agent:'all', source:'all', channel:'all' };
+  const chSel = document.getElementById('nm-channel-select'); if (chSel) chSel.value = 'all';
   document.querySelectorAll('#tab-notmit .gdf-pill').forEach(p => p.classList.remove('active'));
   const allPill = document.querySelector('#tab-notmit .gdf-pill[data-preset="all"]');
   if (allPill) allPill.classList.add('active');
@@ -7685,6 +7719,7 @@ function nmRenderAll() {
   const complianceStats = nmRenderCompliance(rows);
   nmRenderScorecard(agentStats, complianceStats);
   nmRenderWarnings(agentStats, complianceStats);
+  nmRenderChannelTable(rows);
   nmRenderSourceTable(rows);
 }
 
@@ -7962,7 +7997,7 @@ function nmRenderSourceTable(rows) {
   const map = {};
   rows.forEach(r => {
     const s = nmGetCampaign(r);
-    if (!map[s]) map[s] = { total:0, hot:0, warm:0, booking:0, cold:0, lost:0 };
+    if (!map[s]) map[s] = { total:0, hot:0, warm:0, booking:0, cold:0, lost:0, channel: mktGroup(r) };
     map[s].total++;
     const stage = (r['Lead Stage']||'').trim();
     if (stage==='Hot Lead') map[s].hot++;
@@ -7973,16 +8008,70 @@ function nmRenderSourceTable(rows) {
   });
   const total = rows.length || 1;
   const sorted = Object.entries(map).sort((a,b)=>b[1].total-a[1].total);
-  if (badge) badge.textContent = `${sorted.length} of ${NOTMIT_CAMPAIGNS_DISPLAY.length} sources active`;
+  if (badge) badge.textContent = `${sorted.length} of ${NOTMIT_CAMPAIGN_COUNT} sources active`;
   tbody.innerHTML = sorted.map(([s,d]) => {
     const pct = (d.total/total*100).toFixed(1);
     const conv = d.total>0 ? (d.booking/d.total*100).toFixed(1) : '0.0';
+    const ch = NM_CH_META[d.channel] || NM_CH_META.other;
     return `<tr><td>${NOTMIT_DISPLAY_MAP[s]||s}</td>
+      <td><span class="panel-badge ${ch.badge}" style="font-size:10px;">${ch.icon} ${ch.label}</span></td>
       <td class="tr tm fw6">${d.total}</td><td class="tr tm">${pct}%</td>
       <td class="tr tm c-g">${d.hot}</td><td class="tr tm c-a">${d.warm}</td>
       <td class="tr tm fw6">${d.booking}</td><td class="tr tm c-b">${d.cold}</td><td class="tr tm c-r">${d.lost}</td>
       <td class="tr tm fw6" style="color:${parseFloat(conv)>=10?'var(--green)':parseFloat(conv)>=5?'var(--amber)':'var(--red)'};">${conv}%</td></tr>`;
-  }).join('') || `<tr><td colspan="9" style="padding:16px;color:var(--muted);">No leads in this range.</td></tr>`;
+  }).join('') || `<tr><td colspan="10" style="padding:16px;color:var(--muted);">No leads in this range.</td></tr>`;
+}
+
+const NM_CH_META = {
+  digital: { label:'Digital',         icon:'📱', badge:'badge-b',    color:'var(--blue)'  },
+  btl:     { label:'BTL',             icon:'📣', badge:'badge-a',    color:'var(--amber)' },
+  other:   { label:'Offline / Other', icon:'📦', badge:'badge-gray', color:'var(--muted)' },
+};
+function nmRenderChannelTable(rows) {
+  const tbody = document.getElementById('nm-channel-table');
+  const badge = document.getElementById('nm-channel-badge');
+  if (!tbody) return;
+  const map = {};
+  ['digital','btl','other'].forEach(k => map[k] = { total:0, hot:0, warm:0, booking:0, cold:0, lost:0, nr:0, srcs:new Set() });
+  rows.forEach(r => {
+    const g = map[mktGroup(r)] || map.other;
+    g.total++; g.srcs.add(nmGetCampaign(r));
+    const stage = (r['Lead Stage']||'').trim();
+    if (stage==='Hot Lead') g.hot++;
+    else if (stage==='Warm Lead - Decision Pending') g.warm++;
+    else if (stage==='Cold Lead') g.cold++;
+    else if (stage==='Lost') g.lost++;
+    else if (/not respond/i.test(stage)) g.nr++;
+    if (nmIsBooking(r)) g.booking++;
+  });
+  const total = rows.length || 1;
+  const convCol = c => c>=10?'var(--green)':c>=5?'var(--amber)':'var(--red)';
+  let best = null;
+  const body = ['digital','btl','other'].map(k => {
+    const d = map[k], ch = NM_CH_META[k];
+    const conv = d.total>0 ? d.booking/d.total*100 : 0;
+    if (d.total>0 && (!best || conv>best.conv)) best = { k, conv };
+    return `<tr><td><span class="panel-badge ${ch.badge}" style="font-size:10px;">${ch.icon} ${ch.label}</span></td>
+      <td class="tr tm">${d.srcs.size}</td>
+      <td class="tr tm fw6">${d.total}</td><td class="tr tm">${(d.total/total*100).toFixed(1)}%</td>
+      <td class="tr tm c-g">${d.hot}</td><td class="tr tm c-a">${d.warm}</td>
+      <td class="tr tm fw6">${d.booking}</td><td class="tr tm c-b">${d.cold}</td><td class="tr tm c-r">${d.lost}</td>
+      <td class="tr tm" style="color:var(--muted);">${d.nr}</td>
+      <td class="tr tm fw6" style="color:${convCol(conv)};">${conv.toFixed(1)}%</td></tr>`;
+  }).join('');
+  const tb = rows.filter(nmIsBooking).length;
+  const tconv = rows.length ? tb/rows.length*100 : 0;
+  tbody.innerHTML = body + `<tr style="border-top:2px solid var(--border);font-weight:700;"><td>Total</td>
+    <td class="tr tm">${new Set(rows.map(nmGetCampaign)).size}</td>
+    <td class="tr tm fw6">${rows.length}</td><td class="tr tm">100%</td>
+    <td class="tr tm c-g">${map.digital.hot+map.btl.hot+map.other.hot}</td>
+    <td class="tr tm c-a">${map.digital.warm+map.btl.warm+map.other.warm}</td>
+    <td class="tr tm fw6">${tb}</td>
+    <td class="tr tm c-b">${map.digital.cold+map.btl.cold+map.other.cold}</td>
+    <td class="tr tm c-r">${map.digital.lost+map.btl.lost+map.other.lost}</td>
+    <td class="tr tm" style="color:var(--muted);">${map.digital.nr+map.btl.nr+map.other.nr}</td>
+    <td class="tr tm fw6" style="color:${convCol(tconv)};">${tconv.toFixed(1)}%</td></tr>`;
+  if (badge) badge.textContent = best ? `Best conv: ${NM_CH_META[best.k].label} ${best.conv.toFixed(1)}%` : '—';
 }
 
 </script>
